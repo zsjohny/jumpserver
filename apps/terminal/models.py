@@ -183,10 +183,13 @@ class BlackListManager(models.Manager):
 
     def create(self, request):
         if request.get('command', None):
-            self.get_queryset().create(command=request.get('command'))
-            return self
+            try:
+                self.get_queryset().create(command=request.get('command'))
+                return 0
+            except:
+                return 1
         else:
-            return None
+            return -1
 
 
 class BlackList(models.Model):

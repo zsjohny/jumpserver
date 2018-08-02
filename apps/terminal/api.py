@@ -280,16 +280,36 @@ class CommandBlackListViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, many=True)
+        if isinstance(request.data, list):
+            serializer = self.serializer_class(data=request.data, many=True)
+        else:
+            serializer = self.serializer_class(data=request.data)
+
         failure = []
+        ignore = 0
+        success = 0
         if serializer.is_valid():
-            for i in serializer.validated_data:
-                if not BlackList.objects.create(serializer.validated_data):
-                    failure.append(i)
-            if len(failure) == 0:
-                return Response("ok", status=200)
+            if isinstance(serializer.validated_data, list):
+                validated_data = serializer.validated_data
             else:
-                return Response({"error": "Save error", "commands": failure}, status=500)
+                validated_data = [serializer.validated_data]
+
+            for i in validated_data:
+                bl = BlackList.objects.create(i)
+                print(bl)
+                if bl == -1:
+                    failure.append(i)
+                elif bl == 1:
+                    ignore += 1
+                elif bl == 0:
+                    success += 1
+                else:
+                    return Response({"error": "Save error", "commands": failure}, status=500)
+            if len(failure) == 0:
+                return Response({"success": success, "ignore": ignore}, status=200)
+            else:
+                return Response({"error": "Save error", "failure": failure, "success": success, "ignore": ignore},
+                                status=500)
         else:
             msg = "Not valid: {}".format(serializer.errors)
             logger.error(msg)
