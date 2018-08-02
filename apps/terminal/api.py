@@ -269,6 +269,16 @@ class CommandBlackListViewSet(viewsets.ViewSet):
     ...
     ]
 
+    Method POST:
+    {
+        "command": ".*rm.*"
+    }
+    or
+    [{
+        "command": ".*rm.*"
+    },
+    ...
+    ]
 
     '''
     serializer_class = CommandBlackListSerializer
