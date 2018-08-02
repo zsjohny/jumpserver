@@ -296,7 +296,8 @@ class CommandBlackListViewSet(viewsets.ViewSet):
             serializer = self.serializer_class(data=request.data)
 
         failure = []
-        ignore = 0
+        # ignore = 0
+        ignore = []
         success = 0
         if serializer.is_valid():
             if isinstance(serializer.validated_data, list):
@@ -310,7 +311,8 @@ class CommandBlackListViewSet(viewsets.ViewSet):
                 if bl == -1:
                     failure.append(i)
                 elif bl == 1:
-                    ignore += 1
+                    # ignore += 1
+                    ignore.append(i)
                 elif bl == 0:
                     success += 1
                 else:
