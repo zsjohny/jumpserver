@@ -14,3 +14,7 @@ class SessionCommandSerializer(serializers.Serializer):
     session = serializers.CharField(max_length=36)
     timestamp = serializers.IntegerField()
 
+
+class CommandBlackListSerializer(serializers.Serializer):
+    command = serializers.CharField(max_length=200)
+

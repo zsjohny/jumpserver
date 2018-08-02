@@ -19,7 +19,8 @@ class Terminal(models.Model):
     http_port = models.IntegerField(verbose_name=_('HTTP Port'), default=5000)
     command_storage = models.CharField(max_length=128, verbose_name=_("Command storage"), default='default')
     replay_storage = models.CharField(max_length=128, verbose_name=_("Replay storage"), default='default')
-    user = models.OneToOneField(User, related_name='terminal', verbose_name='Application User', null=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, related_name='terminal', verbose_name='Application User', null=True,
+                                on_delete=models.CASCADE)
     is_accepted = models.BooleanField(default=False, verbose_name='Is Accepted')
     is_deleted = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -163,7 +164,55 @@ class Task(models.Model):
 
 
 class Command(AbstractSessionCommand):
-
     class Meta:
         db_table = "terminal_command"
         ordering = ('-timestamp',)
+
+
+class BlackListQuerySet(models.QuerySet):
+    def get_black_list(self):
+        return self.filter(is_enabled=True, is_deleted=False)
+
+
+class BlackListManager(models.Manager):
+    def get_queryset(self):
+        return BlackListQuerySet(self.model, using=self._db)
+
+    def get_black_list(self):
+        return self.get_queryset().get_black_list()
+
+    def create(self, request):
+        if request.get('command', None):
+            self.get_queryset().create(command=request.get('command'))
+            return self
+        else:
+            return None
+
+
+class BlackList(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    command = models.CharField(max_length=200, verbose_name=_('Command'), default='')
+    is_enabled = models.BooleanField(default=True, verbose_name=_('Enable'))
+    is_deleted = models.BooleanField(default=False)
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name=_('Date Created'))
+    comment = models.TextField(blank=True, verbose_name=_('Comment'))
+
+    objects = BlackListManager()
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.save()
+        return
+
+    def enable(self):
+        self.is_enabled = True
+        self.save()
+        return
+
+    def disable(self):
+        self.is_enabled = False
+        self.save()
+        return
+
+    class Meta:
+        db_table = 'terminal_command_black_list'

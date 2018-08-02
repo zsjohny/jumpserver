@@ -1,6 +1,6 @@
 from importlib import import_module
 from django.conf import settings
-from .command.serializers import SessionCommandSerializer
+from .command.serializers import SessionCommandSerializer, CommandBlackListSerializer
 
 TYPE_ENGINE_MAPPING = {
     'elasticsearch': 'terminal.backends.command.es',
@@ -34,5 +34,3 @@ def get_multi_command_storage():
     storage_list = get_terminal_command_storages().values()
     storage = CommandStore(storage_list)
     return storage
-
-

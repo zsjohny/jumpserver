@@ -22,13 +22,13 @@ from rest_framework_bulk import BulkModelViewSet
 
 from common.utils import get_object_or_none, is_uuid
 from .hands import SystemUser
-from .models import Terminal, Status, Session, Task
+from .models import Terminal, Status, Session, Task, BlackList
 from .serializers import TerminalSerializer, StatusSerializer, \
     SessionSerializer, TaskSerializer, ReplaySerializer
 from .hands import IsSuperUserOrAppUser, IsAppUser, \
     IsSuperUserOrAppUserOrUserReadonly
 from .backends import get_command_storage, get_multi_command_storage, \
-    SessionCommandSerializer
+    SessionCommandSerializer, CommandBlackListSerializer
 
 logger = logging.getLogger(__file__)
 
@@ -260,6 +260,41 @@ class CommandViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
 
+class CommandBlackListViewSet(viewsets.ViewSet):
+    '''命令黑名单
+    Method GET:
+    [{
+        "command": ".*rm.*"
+    },
+    ...
+    ]
+
+
+    '''
+    serializer_class = CommandBlackListSerializer
+    permission_classes = (IsSuperUserOrAppUser,)
+
+    def list(self, request, *args, **kwargs):
+        queryset = BlackList.objects.get_black_list()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, many=True)
+        if serializer.is_valid():
+            print('------')
+            for i in serializer.validated_data:
+                print(i['command'])
+            if BlackList.objects.create(request.data):
+                return Response("ok", status=200)
+            else:
+                return Response("Save error", status=500)
+        else:
+            msg = "Not valid: {}".format(serializer.errors)
+            logger.error(msg)
+            return Response({"msg": msg}, status=401)
+
+
 class SessionReplayViewSet(viewsets.ViewSet):
     serializer_class = ReplaySerializer
     permission_classes = (IsSuperUserOrAppUser,)
@@ -334,7 +369,7 @@ class SessionReplayViewSet(viewsets.ViewSet):
         if not configs:
             return HttpResponseNotFound()
 
-        target_path = os.path.join(default_storage.base_location, local_path)   # 保存到storage的路径
+        target_path = os.path.join(default_storage.base_location, local_path)  # 保存到storage的路径
         target_dir = os.path.dirname(target_path)
         if not os.path.isdir(target_dir):
             os.makedirs(target_dir, exist_ok=True)
