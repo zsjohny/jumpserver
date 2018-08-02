@@ -281,14 +281,15 @@ class CommandBlackListViewSet(viewsets.ViewSet):
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, many=True)
+        failure = []
         if serializer.is_valid():
-            print('------')
             for i in serializer.validated_data:
-                print(i['command'])
-            if BlackList.objects.create(request.data):
+                if not BlackList.objects.create(serializer.validated_data):
+                    failure.append(i)
+            if len(failure) == 0:
                 return Response("ok", status=200)
             else:
-                return Response("Save error", status=500)
+                return Response({"error": "Save error", "commands": failure}, status=500)
         else:
             msg = "Not valid: {}".format(serializer.errors)
             logger.error(msg)

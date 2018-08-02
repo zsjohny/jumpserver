@@ -30,7 +30,9 @@ urlpatterns = [
     url(r'^v2/sessions/(?P<pk>[0-9a-zA-Z\-]{36})/replay/$',
         api.SessionReplayV2ViewSet.as_view({'get': 'retrieve'}),
         name='session-replay-v2'),
-    url(r'v2/command/black-list', api.CommandBlackListViewSet.as_view({'get': 'list', 'post': 'create'}), name='command-black-list')
+    url(r'v2/command/black-list',
+        api.CommandBlackListViewSet.as_view({'get': 'list', 'post': 'create'}),
+        name='command-black-list')
 ]
 
 urlpatterns += router.urls

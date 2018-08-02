@@ -191,7 +191,7 @@ class BlackListManager(models.Manager):
 
 class BlackList(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    command = models.CharField(max_length=200, verbose_name=_('Command'), default='')
+    command = models.CharField(max_length=200, verbose_name=_('Command'), default='', unique=True)
     is_enabled = models.BooleanField(default=True, verbose_name=_('Enable'))
     is_deleted = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True, verbose_name=_('Date Created'))
