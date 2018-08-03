@@ -9,11 +9,11 @@ from django.template import loader
 import time
 
 from common.mixins import DatetimeSearchMixin, AdminUserRequiredMixin
-from ..models import Command
+from ..models import Command, BlackList
 from .. import utils
 from ..backends import get_multi_command_storage
 
-__all__ = ['CommandListView', 'CommandExportView']
+__all__ = ['CommandListView', 'CommandExportView', 'CommandBlackListView']
 common_storage = get_multi_command_storage()
 
 
@@ -102,3 +102,28 @@ class CommandExportView(DatetimeSearchMixin, AdminUserRequiredMixin, View):
             filter_kwargs['input'] = self.command
         queryset = common_storage.filter(**filter_kwargs)
         return queryset
+
+
+class CommandBlackListView(DatetimeSearchMixin, AdminUserRequiredMixin, ListView):
+    model = BlackList
+    template_name = "terminal/command_blacklist.html"
+    context_object_name = 'command_blacklist'
+    paginate_by = settings.DISPLAY_PER_PAGE
+    command = ""
+    date_from = date_to = None
+
+    def get_queryset(self):
+        self.command = self.request.GET.get('command', '')
+
+        return BlackList.objects.search(self.command)
+
+    def get_context_data(self, **kwargs):
+        context = {
+            'app': _('Terminal'),
+            'action': _('Command Blacklist'),
+            'command': self.command,
+            'date_from': self.date_from,
+            'date_to': self.date_to,
+        }
+        kwargs.update(context)
+        return super().get_context_data(**kwargs)

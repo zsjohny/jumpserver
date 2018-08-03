@@ -173,6 +173,9 @@ class BlackListQuerySet(models.QuerySet):
     def get_black_list(self):
         return self.filter(is_enabled=True, is_deleted=False)
 
+    def search(self, command):
+        return self.filter(command__contains=command)
+
 
 class BlackListManager(models.Manager):
     def get_queryset(self):
@@ -191,21 +194,18 @@ class BlackListManager(models.Manager):
         else:
             return -1
 
+    def search(self, command):
+        return self.get_queryset().search(command)
+
 
 class BlackList(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     command = models.CharField(max_length=200, verbose_name=_('Command'), default='', unique=True)
     is_enabled = models.BooleanField(default=True, verbose_name=_('Enable'))
-    is_deleted = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True, verbose_name=_('Date Created'))
     comment = models.TextField(blank=True, verbose_name=_('Comment'))
 
     objects = BlackListManager()
-
-    def delete(self, using=None, keep_parents=False):
-        self.is_deleted = True
-        self.save()
-        return
 
     def enable(self):
         self.is_enabled = True
@@ -219,3 +219,4 @@ class BlackList(models.Model):
 
     class Meta:
         db_table = 'terminal_command_black_list'
+        ordering = ('-date_created',)

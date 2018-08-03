@@ -24,6 +24,7 @@ urlpatterns = [
 
     # Command view
     url(r'^command/$', views.CommandListView.as_view(), name='command-list'),
-    url(r'^command/export/$', views.CommandExportView.as_view(), name='command-export')
+    url(r'^command/export/$', views.CommandExportView.as_view(), name='command-export'),
+    url(r'^command/blacklist/$', views.CommandBlackListView.as_view(), name='command-blacklist'),
 
 ]
