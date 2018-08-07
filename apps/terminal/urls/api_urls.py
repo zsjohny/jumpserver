@@ -34,9 +34,10 @@ urlpatterns = [
         api.CommandBlackListViewSet.as_view({'get': 'list', 'post': 'create'}),
         name='command-blacklist'),
     url(r'^v2/command/blacklist/(?P<pk>[0-9a-zA-Z\-]{36})/$',
-        api.CommandBlackListUpdateViewSet.as_view({'get': 'list'}), name='command-blacklist-get'),
+        api.CommandBlackListUpdateViewSet.as_view({'get': 'list', 'post': 'create'}), name='command-blacklist-get'),
     url(r'^v2/command/blacklist/(?P<pk>[0-9a-zA-Z\-]{36})/update/$',
-        api.CommandBlackListUpdateViewSet.as_view({'post': 'create','delete':'delete'}), name='command-blacklist-update'),
+        api.CommandBlackListUpdateViewSet.as_view({'post': 'create', 'delete': 'delete'}),
+        name='command-blacklist-update'),
 ]
 
 urlpatterns += router.urls
