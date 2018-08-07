@@ -114,7 +114,6 @@ class CommandBlackListView(DatetimeSearchMixin, AdminUserRequiredMixin, ListView
 
     def get_queryset(self):
         self.command = self.request.GET.get('command', '')
-
         return BlackList.objects.search(self.command)
 
     def get_context_data(self, **kwargs):
@@ -122,8 +121,6 @@ class CommandBlackListView(DatetimeSearchMixin, AdminUserRequiredMixin, ListView
             'app': _('Terminal'),
             'action': _('Command Blacklist'),
             'command': self.command,
-            'date_from': self.date_from,
-            'date_to': self.date_to,
         }
         kwargs.update(context)
         return super().get_context_data(**kwargs)

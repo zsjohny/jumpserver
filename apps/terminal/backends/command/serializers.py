@@ -17,4 +17,5 @@ class SessionCommandSerializer(serializers.Serializer):
 
 class CommandBlackListSerializer(serializers.Serializer):
     command = serializers.CharField(max_length=200)
+    is_enabled = serializers.BooleanField()
 

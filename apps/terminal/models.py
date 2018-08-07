@@ -171,10 +171,11 @@ class Command(AbstractSessionCommand):
 
 class BlackListQuerySet(models.QuerySet):
     def get_black_list(self):
-        return self.filter(is_enabled=True, is_deleted=False)
+        return self.filter(is_enabled=True)
 
     def search(self, command):
         return self.filter(command__contains=command)
+
 
 
 class BlackListManager(models.Manager):

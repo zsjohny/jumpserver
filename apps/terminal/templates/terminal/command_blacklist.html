@@ -37,16 +37,26 @@
         <tr>
             <th data-toggle="true">ID</th>
             <th>{% trans 'Command' %}</th>
-            <th>{% trans 'Datetime' %}</th>
+            <th>{% trans 'Is Enabled' %}</th>
+            <th>{% trans 'Action' %}</th>
         </tr>
         </thead>
         <tbody>
         {% for command in command_blacklist %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ command.command }}</td>
-                <td>{{ command.date_created }}</td>
-            </tr>
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><p id="p-{{command.id}}">{{ command.command }}</p>
+                <input id='cmd-{{command.id}}' value="{{command.command}}" hidden></td>
+            <td><p id="pp-{{command.id}}">{{ command.is_enabled }}</p>
+                <input id='check-{{command.id}}' type="checkbox" checked="{{command.is_enabled}}" hidden>
+            </td>
+            <td>
+                <button id='edit-{{command.id}}' type="edit" data-id="{{command.id}}">{% trans 'Edit' %}</button>
+                <button id='delete-{{command.id}}' type="delete" data-id="{{command.id}}" hidden>{% trans 'Delete' %}</button>
+                <button id='save-{{command.id}}' type="save" data-id="{{command.id}}" hidden>{% trans 'Save' %}</button>
+                <button id='cancel-{{command.id}}' type="cancel" data-id="{{command.id}}"hidden>{% trans 'Cancel' %}</button>
+            </td>
+        </tr>
         {% endfor %}
         </tbody>
     </table>
@@ -83,6 +93,89 @@ $(document).ready(function () {
         calendarWeeks: true,
         autoclose: true
     });
+    $('[type=edit]').on('click', function (event) {
+            $('#p-' + event.target.dataset.id).hide();
+            $('#pp-' + event.target.dataset.id).hide();
+            $('#edit-' + event.target.dataset.id).hide();
+            $('#cmd-' + event.target.dataset.id).show();
+            $('#check-' + event.target.dataset.id).show();
+            $('#delete-' + event.target.dataset.id).show();
+            $('#save-' + event.target.dataset.id).show();
+            $('#cancel-' + event.target.dataset.id).show();
+        }
+    );
+    $('[type=cancel]').on('click', function (event) {
+            $('#p-' + event.target.dataset.id).show();
+            $('#pp-' + event.target.dataset.id).show();
+            $('#edit-' + event.target.dataset.id).show();
+            $('#cmd-' + event.target.dataset.id).hide();
+            $('#check-' + event.target.dataset.id).hide();
+            $('#delete-' + event.target.dataset.id).hide();
+            $('#save-' + event.target.dataset.id).hide();
+            $('#cancel-' + event.target.dataset.id).hide();
+        }
+    );
+    $('[type=delete]').on('click', function (event) {
+            console.log('are you sure to delete?');
+            $('#p-' + event.target.dataset.id).show();
+            $('#pp-' + event.target.dataset.id).show();
+            $('#edit-' + event.target.dataset.id).show();
+            $('#cmd-' + event.target.dataset.id).hide();
+            $('#check-' + event.target.dataset.id).hide();
+            $('#delete-' + event.target.dataset.id).hide();
+            $('#save-' + event.target.dataset.id).hide();
+            $('#cancel-' + event.target.dataset.id).hide();
+            $.ajax({
+                type: "DELETE",
+                url: '/api/terminal/v2/command/blacklist/' + event.target.dataset.id + '/update/',
+                success: function (result) {
+                    console.log(result);
+                    // Todo: alert success
+                    $('#p-' + event.target.dataset.id).parent().parent().hide()
+                },
+                error:function (result) {
+                    // Todo: alert error
+                     console.log(result);
+                }
+
+            })
+        }
+    );
+    $('[type=save]').on('click', function (event) {
+            var p = $('#p-' + event.target.dataset.id);
+            var pp = $('#pp-' + event.target.dataset.id);
+            var cmd = $('#cmd-' + event.target.dataset.id);
+            var check = $('#check-' + event.target.dataset.id);
+            console.log('save!');
+            p.show();
+            p[0].innerHTML = cmd[0].value;
+            pp.show();
+            pp[0].innerHTML = check[0].checked;
+
+            $('#edit-' + event.target.dataset.id).show();
+            cmd.hide();
+            check.hide();
+            $('#delete-' + event.target.dataset.id).hide();
+            $('#save-' + event.target.dataset.id).hide();
+            $('#cancel-' + event.target.dataset.id).hide();
+
+            $.ajax({
+                type: "POST",
+                contentType: 'application/json',
+
+                url: '/api/terminal/v2/command/blacklist/' + event.target.dataset.id + '/update/',
+                data: JSON.stringify({command: cmd[0].value, is_enabled: check[0].checked}),
+                success: function (result) {
+                    // Todo: alert success
+                    console.log(result)
+                },
+                error: function (result) {
+                    // Todo: alert error
+                     console.log(result);
+                }
+            });
+        }
+    );
 })
 .on('click', '#btn_bulk_update', function(){
     var action = $('#slct_bulk_update').val();

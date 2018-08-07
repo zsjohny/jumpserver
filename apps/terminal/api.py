@@ -328,6 +328,50 @@ class CommandBlackListViewSet(viewsets.ViewSet):
             return Response({"msg": msg}, status=401)
 
 
+class CommandBlackListUpdateViewSet(viewsets.ViewSet):
+    serializer_class = CommandBlackListSerializer
+    permission_classes = (IsSuperUserOrAppUser,)
+
+    def list(self, request, *args, **kwargs):
+        id = kwargs.get('pk', None)
+        if not id:
+            return Response({"msg": 'id error'}, status=401)
+        queryset = BlackList.objects.filter(id=id)[0]
+        serializer = self.serializer_class(queryset)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        id = kwargs.get('pk', None)
+        change = False
+        if not id:
+            return Response({"msg": 'id error'}, status=401)
+        obj = BlackList.objects.filter(id=id)
+        if len(obj) == 0:
+            return Response({"msg": 'id error'}, status=401)
+        if request.data.get('command', None):
+            obj.update(command=request.data.get('command', None))
+            change = True
+        if not request.data.get('is_enabled', None) == None:
+            obj.update(is_enabled=request.data.get('is_enabled', None))
+            change = True
+        if change:
+            return Response({"msg": "success"}, status=200)
+        else:
+            msg = 'not changed, please check your input'
+            logger.error(msg)
+            return Response({"msg": msg}, status=401)
+
+    def delete(self, request, *args, **kwargs):
+        id = kwargs.get('pk', None)
+        if not id:
+            return Response({"msg": 'id error'}, status=401)
+        try:
+            BlackList.objects.filter(id=id).delete()
+            return Response({"msg": "success delete"}, status=200)
+        except:
+            return Response({"msg": "error"}, status=401)
+
+
 class SessionReplayViewSet(viewsets.ViewSet):
     serializer_class = ReplaySerializer
     permission_classes = (IsSuperUserOrAppUser,)

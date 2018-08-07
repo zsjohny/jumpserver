@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Jumpserver 0.3.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-03 10:31+0800\n"
+"POT-Creation-Date: 2018-08-03 10:53+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: ibuler <ibuler@qq.com>\n"
 "Language-Team: Jumpserver team<ibuler@qq.com>\n"
@@ -682,7 +682,7 @@ msgstr "重置"
 #: common/templates/common/security_setting.html:71
 #: common/templates/common/terminal_setting.html:108
 #: perms/templates/perms/asset_permission_create_update.html:70
-#: terminal/templates/terminal/command_blacklist.html:61
+#: terminal/templates/terminal/command_blacklist.html:63
 #: terminal/templates/terminal/command_list.html:103
 #: terminal/templates/terminal/session_list.html:126
 #: terminal/templates/terminal/terminal_update.html:48
@@ -786,6 +786,7 @@ msgstr "更新"
 #: ops/templates/ops/task_list.html:72
 #: perms/templates/perms/asset_permission_detail.html:34
 #: perms/templates/perms/asset_permission_list.html:192
+#: terminal/templates/terminal/command_blacklist.html:50
 #: terminal/templates/terminal/terminal_list.html:73
 #: users/templates/users/user_detail.html:30
 #: users/templates/users/user_group_detail.html:32
@@ -847,12 +848,13 @@ msgstr "比例"
 #: ops/templates/ops/adhoc_history.html:59 ops/templates/ops/task_adhoc.html:64
 #: ops/templates/ops/task_history.html:65 ops/templates/ops/task_list.html:42
 #: perms/templates/perms/asset_permission_list.html:60
+#: terminal/templates/terminal/command_blacklist.html:41
 #: terminal/templates/terminal/session_list.html:81
 #: terminal/templates/terminal/terminal_list.html:36
 #: users/templates/users/user_group_list.html:15
 #: users/templates/users/user_list.html:29
 msgid "Action"
-msgstr "动作"
+msgstr "操作"
 
 #: assets/templates/assets/asset_detail.html:20 assets/views/asset.py:198
 msgid "Asset detail"
@@ -1786,7 +1788,6 @@ msgid "Versions of "
 msgstr "版本"
 
 #: ops/templates/ops/task_adhoc.html:63
-#: terminal/templates/terminal/command_blacklist.html:40
 #: terminal/templates/terminal/command_list.html:76
 #: terminal/templates/terminal/session_detail.html:50
 msgid "Datetime"
@@ -2214,7 +2215,19 @@ msgstr "启用"
 msgid "Date Created"
 msgstr "创建日期"
 
-#: terminal/templates/terminal/command_blacklist.html:57
+#: terminal/templates/terminal/command_blacklist.html:40
+msgid "Is Enabled"
+msgstr "启用"
+
+#: terminal/templates/terminal/command_blacklist.html:50
+msgid "Edit"
+msgstr "编辑"
+
+#: terminal/templates/terminal/command_blacklist.html:50
+msgid "Save"
+msgstr "保存"
+
+#: terminal/templates/terminal/command_blacklist.html:59
 #: terminal/templates/terminal/command_list.html:99
 msgid "Export command"
 msgstr "导出命令"
