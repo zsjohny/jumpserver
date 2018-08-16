@@ -52,6 +52,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="input-group">
+            <select class="select2 form-control" name="remote_addr">
+                <option value="">{% trans 'Remote addr' %}</option>
+                {% for ra in remote_addr_list %}
+                    <option value="{{ ra }}" {% if ra == remote_addr %} selected {% endif %}>{{ ra }}</option>
+                {% endfor %}
+            </select>
+        </div>
 {#        <div class="input-group">#}
 {#            <input type="text" class="form-control input-sm" name="keyword" placeholder="Keyword" value="{{ keyword }}">#}
 {#        </div>#}

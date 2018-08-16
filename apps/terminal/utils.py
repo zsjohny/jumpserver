@@ -18,6 +18,10 @@ def get_session_system_user_list():
     return set(list(Session.objects.values_list('system_user', flat=True)))
 
 
+def get_session_remote_addr_list():
+    return set(list(Session.objects.values_list('remote_addr', flat=True)))
+
+
 def get_user_list_from_cache():
     return cache.get(USERS_CACHE_KEY)
 

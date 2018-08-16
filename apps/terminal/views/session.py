@@ -27,7 +27,7 @@ class SessionListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
     template_name = 'terminal/session_list.html'
     context_object_name = 'session_list'
     paginate_by = settings.DISPLAY_PER_PAGE
-    user = asset = system_user = ''
+    user = asset = system_user = remote_addr = ''
     date_from = date_to = None
 
     def get_queryset(self):
@@ -35,6 +35,7 @@ class SessionListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
         self.user = self.request.GET.get('user')
         self.asset = self.request.GET.get('asset')
         self.system_user = self.request.GET.get('system_user')
+        self.remote_addr = self.request.GET.get('remote_addr')
 
         filter_kwargs = dict()
         filter_kwargs['date_start__gt'] = self.date_from
@@ -45,6 +46,8 @@ class SessionListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
             filter_kwargs['asset'] = self.asset
         if self.system_user:
             filter_kwargs['system_user'] = self.system_user
+        if self.remote_addr:
+            filter_kwargs['remote_addr'] = self.remote_addr
         if filter_kwargs:
             self.queryset = self.queryset.filter(**filter_kwargs)
         return self.queryset
@@ -54,11 +57,13 @@ class SessionListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
             'user_list': utils.get_session_user_list(),
             'asset_list': utils.get_session_asset_list(),
             'system_user_list': utils.get_session_system_user_list(),
+            'remote_addr_list': utils.get_session_remote_addr_list(),
             'date_from': self.date_from,
             'date_to': self.date_to,
             'user': self.user,
             'asset': self.asset,
             'system_user': self.system_user,
+            'remote_addr': self.remote_addr,
         }
         kwargs.update(context)
         return super().get_context_data(**kwargs)
