@@ -1,8 +1,14 @@
+import re
+
 from django.db import models
 from django.conf import settings
 
 from common.fields import JsonListTextField
 from orgs.mixins import OrgModelMixin
+
+
+def default_rule_to_patterns_handler(rule):
+    url = '/api/{app}/{version}/{resource}/'
 
 
 class BaseRole(models.Model):
@@ -32,6 +38,11 @@ class Rule(models.Model):
     resources = JsonListTextField()
     resources_ids = JsonListTextField()
     non_resource_urls = JsonListTextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=128, blank=True, default='')
+
+    def to_patterns(self):
+        pass
 
 
 class BaseRoleBinding(models.Model):
