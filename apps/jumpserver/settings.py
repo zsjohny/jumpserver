@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'terminal.apps.TerminalConfig',
     'audits.apps.AuditsConfig',
     'authentication.apps.AuthenticationConfig',  # authentication
+    'authorization.apps.AuthorizationConfig',
     'rest_framework',
     'rest_framework_swagger',
     'drf_yasg',
@@ -367,6 +368,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Custom User Auth model
 AUTH_USER_MODEL = 'users.User'
+AUTH_GROUP_MODEL = 'users.UserGroup'
 
 # File Upload Permissions
 FILE_UPLOAD_PERMISSIONS = 0o644

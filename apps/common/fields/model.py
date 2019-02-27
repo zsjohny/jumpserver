@@ -8,7 +8,7 @@ from ..utils import get_signer
 
 
 __all__ = [
-    'JsonMixin', 'JsonDictMixin', 'JsonListMix', 'JsonTypeMixin',
+    'JsonMixin', 'JsonDictMixin', 'JsonListMixin', 'JsonTypeMixin',
     'JsonCharField', 'JsonTextField', 'JsonListCharField', 'JsonListTextField',
     'JsonDictCharField', 'JsonDictTextField', 'EncryptCharField',
     'EncryptTextField', 'EncryptMixin',
@@ -83,16 +83,28 @@ class JsonDictTextField(JsonDictMixin, models.TextField):
     description = _("Marshal dict data to text field")
 
 
-class JsonListMix(JsonTypeMixin):
+class JsonListMixin(JsonTypeMixin):
     tp = list
 
 
-class JsonListCharField(JsonListMix, models.CharField):
+class JsonStrListMixin(JsonListMixin):
+    pass
+
+
+class JsonListCharField(JsonListMixin, models.CharField):
     description = _("Marshal list data to char field")
 
 
-class JsonListTextField(JsonListMix, models.TextField):
+class JsonListTextField(JsonListMixin, models.TextField):
     description = _("Marshal list data to text field")
+
+
+class JsonCharField(JsonMixin, models.CharField):
+    description = _("Marshal data to char field")
+
+
+class JsonTextField(JsonMixin, models.TextField):
+    description = _("Marshal data to text field")
 
 
 class EncryptMixin:
@@ -117,9 +129,4 @@ class EncryptCharField(EncryptMixin, models.CharField):
         super().__init__(*args, **kwargs)
 
 
-class JsonCharField(JsonMixin, models.CharField):
-    description = _("Marshal data to char field")
 
-
-class JsonTextField(JsonMixin, models.TextField):
-    description = _("Marshal data to text field")

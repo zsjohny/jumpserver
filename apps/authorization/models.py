@@ -1,7 +1,8 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 from common.fields import JsonListTextField
+from orgs.mixins import OrgModelMixin
 
 
 class BaseRole(models.Model):
@@ -13,38 +14,38 @@ class BaseRole(models.Model):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        return self.name
 
-class Role(BaseRole):
-    org_id = models.CharField(max_length=36, blank=True, default='',
-                              verbose_name=_("Organization"), db_index=True)
+
+class Role(OrgModelMixin, BaseRole):
+    pass
 
 
 class ClusterRole(BaseRole):
-    non_resource_urls = JsonListTextField()
+    pass
 
 
 class Rule(models.Model):
-    VERBOSE_CHOICES = [
-        ('list', 'List'),
-        ('retrieve', 'Retrieve'),
-        ('create', 'Create'),
-        ('update', 'Update'),
-        ('patch', 'PartialUpdate'),
-        ('delete', 'Delete'),
-    ]
-    api_groups = JsonListTextField()
-    resources = JsonListTextField()
-    resourcesIDs = JsonListTextField()
     verbs = JsonListTextField()
+    apps = JsonListTextField()
+    resources = JsonListTextField()
+    resources_ids = JsonListTextField()
+    non_resource_urls = JsonListTextField()
 
 
 class BaseRoleBinding(models.Model):
+    role = models.ForeignKey('Role', on_delete=models.CASCADE)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    groups = models.ManyToManyField(settings.AUTH_GROUP_MODEL)
+    date_created = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=128, blank=True, default='')
 
     class Meta:
         abstract = True
 
 
-class RoleBinding(BaseRoleBinding):
+class RoleBinding(OrgModelMixin, BaseRoleBinding):
     pass
 
 
