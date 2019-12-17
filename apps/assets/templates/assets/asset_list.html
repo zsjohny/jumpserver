@@ -516,7 +516,7 @@ $(document).ready(function(){
         method: 'GET',
         success: function (response) {
             if(response.status){
-                swal("{% trans 'Sync Asset Task' %}", response.msg +'<br>'+ response.task_id, "success");
+                swal("{% trans 'Sync Asset Task' %}", response.msg +'   '+ response.task_id, "success");
             }else{
                 swal("{% trans 'Sync Asset Task' %}", response.msg, "error");
             }
