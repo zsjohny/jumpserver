@@ -330,6 +330,7 @@ defaults = {
     'SECURITY_PASSWORD_LOWER_CASE': False,
     'SECURITY_PASSWORD_NUMBER': False,
     'SECURITY_PASSWORD_SPECIAL_CHAR': False,
+    'KUICK_CUSTOMER_API_URL': "http://kuick.customer.api.url"
 }
 
 

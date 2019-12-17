@@ -66,7 +66,10 @@
                </div>
            </div>
            <div class="mail-box-header">
-               <div class="uc pull-left m-r-5"><a class="btn btn-sm btn-primary btn-create-asset"> {% trans "Create asset" %} </a></div>
+               <div class="uc pull-left m-r-5">
+                   <a class="btn btn-sm btn-primary btn-create-asset"> {% trans "Create asset" %} </a>
+                   <a class="btn btn-sm btn-info btn-sync-asset"> {% trans "Sync asset" %} </a>
+               </div>
                <div class="html5buttons">
                    <div class="dt-buttons btn-group">
                        <a class="btn btn-default btn_import" data-toggle="modal" data-target="#asset_import_modal" tabindex="0">
@@ -505,6 +508,20 @@ $(document).ready(function(){
         url += "?node_id=" + current_node_id;
     }
     window.open(url, '_self');
+})
+.on('click', '.btn-sync-asset', function () {
+    var the_url = "{% url 'api-assets:asset-sync' %}";
+    $.ajax({
+        url: the_url,
+        method: 'GET',
+        success: function (response) {
+            if(response.status){
+                swal("{% trans 'Sync Asset Task' %}", response.msg +'<br>'+ response.task_id, "success");
+            }else{
+                swal("{% trans 'Sync Asset Task' %}", response.msg, "error");
+            }
+        }
+    });
 })
 .on('click', '.btn-refresh-hardware', function () {
     var url = "{% url 'api-assets:node-refresh-hardware-info' pk=DEFAULT_PK %}";

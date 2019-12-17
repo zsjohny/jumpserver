@@ -1206,6 +1206,12 @@ msgstr ""
 msgid "Create asset"
 msgstr "创建资产"
 
+msgid "Sync asset"
+msgstr "同步资产"
+
+msgid "Sync Asset Task"
+msgstr "同步任务提交"
+
 #: assets/templates/assets/asset_list.html:73
 #: users/templates/users/user_list.html:7
 msgid "Import"

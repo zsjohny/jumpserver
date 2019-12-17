@@ -2,6 +2,7 @@
 #
 
 import random
+import requests
 
 from rest_framework import generics
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from rest_framework_bulk import ListBulkCreateUpdateDestroyAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-
+from rest_framework.decorators import action
 from common.mixins import IDInFilterMixin
 from common.utils import get_logger
 from common.permissions import IsOrgAdmin, IsOrgAdminOrAppUser
@@ -19,7 +20,7 @@ from .. import serializers
 from ..tasks import update_asset_hardware_info_manual, \
     test_asset_connectivity_manual
 from ..utils import LabelFilter
-
+from django.conf import settings
 
 logger = get_logger(__file__)
 __all__ = [
@@ -40,6 +41,21 @@ class AssetViewSet(IDInFilterMixin, LabelFilter, BulkModelViewSet):
     serializer_class = serializers.AssetSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (IsOrgAdminOrAppUser,)
+
+    """ 阿里云资产同步任务提交 """
+
+    @action(methods=["get"], detail=False, url_path="sync", url_name="sync", permission_classes=[IsOrgAdmin, ])
+    def sync(self, request, *args, **kwargs):
+        response = {"status": False}
+        try:
+            request = requests.post("{}/api/task".format(settings.CONFIG.KUICK_CUSTOMER_API_URL),
+                                    data={"task_name": "apps.tasks.assets_sync"})
+            request.raise_for_status()
+            response.update(request.json())
+        except Exception as exc:
+            response.update({"msg": exc.__str__()})
+        finally:
+            return Response(response)
 
     def filter_node(self, queryset):
         node_id = self.request.query_params.get("node_id")

@@ -61,6 +61,10 @@ def make_migrations():
     print("Migrate model change to database ...")
     subprocess.call('python3 manage.py migrate', shell=True)
 
+def i18n_migrations():
+    os.chdir(os.path.join(BASE_DIR, 'apps'))
+    print("Migrate i18n change to django.mo ...")
+    subprocess.call('python3 manage.py compilemessages', shell=True)
 
 def collect_static():
     print("Collect static files")
@@ -72,6 +76,7 @@ def prepare():
     check_database_connection()
     make_migrations()
     collect_static()
+    i18n_migrations()
 
 
 def check_pid(pid):
