@@ -49,7 +49,7 @@ class AssetViewSet(IDInFilterMixin, LabelFilter, BulkModelViewSet):
         response = {"status": False}
         try:
             request = requests.post("{}/api/task".format(settings.CONFIG.KUICK_CUSTOMER_API_URL),
-                                    data={"task_name": "apps.tasks.assets_sync"})
+                                    data={"task_name": "apps.tasks.assets_sync"}, timeout=3)
             request.raise_for_status()
             response.update(request.json())
         except Exception as exc:
