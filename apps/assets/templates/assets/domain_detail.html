@@ -2,11 +2,6 @@
 {% load static %}
 {% load i18n %}
 
-{% block custom_head_css_js %}
-    <link href='{% static "css/plugins/select2/select2.min.css" %}' rel="stylesheet">
-    <script src='{% static "js/plugins/select2/select2.full.min.js" %}'></script>
-{% endblock %}
-
 {% block content %}
     <div class="wrapper wrapper-content animated fadeInRight">
         <div class="row">
@@ -24,14 +19,14 @@
                                 <a class="btn btn-outline btn-default" href="{% url 'assets:domain-update' pk=object.id %}"><i class="fa fa-edit"></i>{% trans 'Update' %}</a>
                             </li>
                             <li class="pull-right">
-                                <a class="btn btn-outline btn-danger btn-del">
+                                <a class="btn btn-outline btn-danger btn-del btn-delete-domain">
                                     <i class="fa fa-trash-o"></i>{% trans 'Delete' %}
                                 </a>
                             </li>
                         </ul>
                     </div>
                     <div class="tab-content">
-                        <div class="col-sm-9" style="padding-left: 0;">
+                        <div class="col-sm-8" style="padding-left: 0;">
                             <div class="ibox float-e-margins">
                                 <div class="ibox-title">
                                     <span class="label"><b>{{ object.name }}</b></span>
@@ -67,10 +62,6 @@
                                         <tr>
                                             <td>{% trans 'Date created' %}:</td>
                                             <td><b>{{ object.date_created }}</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>{% trans 'Created by' %}:</td>
-                                            <td><b>{{ object.created_by  }}</b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Comment' %}:</td>
@@ -127,6 +118,15 @@ $(document).ready(function(){
     setTimeout( function () {
         $data_table.ajax.reload();
     }, 3000);
-});
+})
+.on('click', '.btn-delete-domain', function () {
+    var $this = $(this);
+    var name = "{{ object.name }}";
+    var uid = "{{ object.id }}";
+    var the_url = '{% url "api-assets:domain-detail" pk=DEFAULT_PK %}'.replace('{{ DEFAULT_PK }}', uid);
+    var redirect_url = "{% url 'assets:domain-list' %}";
+    objectDelete($this, name, the_url, redirect_url);
+})
+;
 </script>
 {% endblock %}

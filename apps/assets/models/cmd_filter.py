@@ -7,7 +7,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import ugettext_lazy as _
 
-from orgs.mixins import OrgModelMixin
+from common.utils import lazyproperty
+from orgs.mixins.models import OrgModelMixin
 
 
 __all__ = [
@@ -17,7 +18,7 @@ __all__ = [
 
 class CommandFilter(OrgModelMixin):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True)
-    name = models.CharField(max_length=64, verbose_name=_("Name"))
+    name = models.CharField(max_length=64, unique=True, verbose_name=_("Name"))
     is_active = models.BooleanField(default=True, verbose_name=_('Is active'))
     comment = models.TextField(blank=True, default='', verbose_name=_("Comment"))
     date_created = models.DateTimeField(auto_now_add=True)
@@ -57,25 +58,30 @@ class CommandFilterRule(OrgModelMixin):
     date_updated = models.DateTimeField(auto_now=True)
     created_by = models.CharField(max_length=128, blank=True, default='', verbose_name=_('Created by'))
 
-    __pattern = None
-
     class Meta:
         ordering = ('-priority', 'action')
         verbose_name = _("Command filter rule")
 
-    @property
+    @lazyproperty
     def _pattern(self):
-        if self.__pattern:
-            return self.__pattern
         if self.type == 'command':
             regex = []
-            for cmd in self.content.split('\r\n'):
-                cmd = cmd.replace(' ', '\s+')
-                regex.append(r'\b{0}\b'.format(cmd))
-            self.__pattern = re.compile(r'{}'.format('|'.join(regex)))
+            content = self.content.replace('\r\n', '\n')
+            for cmd in content.split('\n'):
+                cmd = re.escape(cmd)
+                cmd = cmd.replace('\\ ', '\s+')
+                if cmd[-1].isalpha():
+                    regex.append(r'\b{0}\b'.format(cmd))
+                else:
+                    regex.append(r'\b{0}'.format(cmd))
+            s = r'{}'.format('|'.join(regex))
         else:
-            self.__pattern = re.compile(r'{0}'.format(self.content))
-        return self.__pattern
+            s = r'{0}'.format(self.content)
+        try:
+            _pattern = re.compile(s)
+        except:
+            _pattern = ''
+        return _pattern
 
     def match(self, data):
         found = self._pattern.search(data)

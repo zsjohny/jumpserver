@@ -3,9 +3,7 @@
 {% load i18n %}
 
 {% block custom_head_css_js %}
-    <link href="{% static 'css/plugins/select2/select2.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/plugins/sweetalert/sweetalert.css' %}" rel="stylesheet">
-    <script src="{% static 'js/plugins/select2/select2.full.min.js' %}"></script>
     <script src="{% static 'js/plugins/sweetalert/sweetalert.min.js' %}"></script>
 {% endblock %}
 
@@ -23,10 +21,10 @@
                                 <a href="{% url 'ops:task-adhoc' pk=object.pk %}" class="text-center"><i class="fa fa-laptop"></i> {% trans 'Task versions' %} </a>
                             </li>
                             <li>
-                                <a href="{% url 'ops:task-history' pk=object.pk %}" class="text-center"><i class="fa fa-laptop"></i> {% trans 'Run history' %} </a>
+                                <a href="{% url 'ops:task-execution' pk=object.pk %}" class="text-center"><i class="fa fa-laptop"></i> {% trans 'Execution' %} </a>
                             </li>
                             <li>
-                                <a class="text-center celery-task-log"><i class="fa fa-laptop"></i> {% trans 'Last run output' %} </a>
+                                <a class="text-center celery-task-log"><i class="fa fa-laptop"></i> {% trans 'Last execution output' %} </a>
                             </li>
                         </ul>
                     </div>
@@ -74,19 +72,31 @@
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Last run' %}:</td>
-                                            <td><b>{{ object.latest_history.date_start }}</b></td>
+                                            <td><b>{{ object.latest_execution.date_start }}</b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Time delta' %}:</td>
-                                            <td><b>{{ object.latest_history.timedelta|floatformat}} s</b></td>
+                                            <td><b>{{ object.latest_execution.timedelta|floatformat}} s</b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Is finished' %}:</td>
-                                            <td><b>{{ object.latest_history.is_finished|yesno:"Yes,No,Unkown" }}</b></td>
+                                            <td><b>
+                                                {% if object.latest_execution.is_finished %}
+                                                    {% trans 'Yes' %}
+                                                {% else %}
+                                                    {% trans 'No' %}
+                                                {% endif %}
+                                            </b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Is success ' %}:</td>
-                                            <td><b>{{ object.latest_history.is_success|yesno:"Yes,No,Unkown" }}</b></td>
+                                            <td><b>
+                                                {% if object.latest_execution.is_success %}
+                                                    {% trans 'Yes' %}
+                                                {% else %}
+                                                    {% trans 'No' %}
+                                                {% endif %}
+                                            </b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Contents' %}:</td>
@@ -111,7 +121,7 @@
                                 <div class="panel-body">
                                     <table class="table">
                                         <tbody>
-                                        {% for host, task in object.latest_history.failed_hosts.items %}
+                                        {% for host, task in object.latest_execution.failed_hosts.items %}
                                         {% if forloop.first %}
                                         <tr class="no-borders-tr">
                                         {% else %}
@@ -141,7 +151,7 @@
                                 <div class="panel-body">
                                     <table class="table">
                                         <tbody>
-                                        {% for host in object.latest_history.success_hosts %}
+                                        {% for host in object.latest_execution.success_hosts %}
                                         {% if forloop.first %}
                                         <tr class="no-borders-tr">
                                         {% else %}
@@ -169,13 +179,12 @@
 <script>
 $(document).ready(function () {
 }).on('click', '.celery-task-log', function () {
-    var history_pk = "{{ object.latest_history.pk  }}";
-    if (!history_pk) {
+    var execution_pk = "{{ object.latest_execution.pk  }}";
+    if (!execution_pk) {
         alert("没有运行历史");
         return
     }
-    var url = '{% url 'ops:celery-task-log' pk=DEFAULT_PK %}'.replace('{{ DEFAULT_PK }}', history_pk);
-    window.open(url, '', 'width=800,height=600,left=400,top=400')
+    showCeleryTaskLog(execution_pk);
 })
 
 </script>

@@ -4,7 +4,8 @@ import uuid
 from django.db import models, IntegrityError
 from django.utils.translation import ugettext_lazy as _
 
-from orgs.mixins import OrgModelMixin
+from common.utils import lazyproperty
+from orgs.mixins.models import OrgModelMixin
 
 __all__ = ['UserGroup']
 
@@ -19,6 +20,10 @@ class UserGroup(OrgModelMixin):
 
     def __str__(self):
         return self.name
+
+    @lazyproperty
+    def users_amount(self):
+        return self.users.count()
 
     class Meta:
         ordering = ['name']

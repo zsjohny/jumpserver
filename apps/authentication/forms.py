@@ -2,12 +2,11 @@
 #
 
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from captcha.fields import CaptchaField
 
 
-class UserLoginForm(AuthenticationForm):
+class UserLoginForm(forms.Form):
     username = forms.CharField(label=_('Username'), max_length=100)
     password = forms.CharField(
         label=_('Password'), widget=forms.PasswordInput,
@@ -18,7 +17,8 @@ class UserLoginForm(AuthenticationForm):
         if not user.is_staff:
             raise forms.ValidationError(
                 self.error_messages['inactive'],
-                code='inactive',)
+                code='inactive',
+            )
 
 
 class UserLoginCaptchaForm(UserLoginForm):

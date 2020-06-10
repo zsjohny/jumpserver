@@ -29,7 +29,6 @@ BOOTSTRAP_TOKEN:
 # 使用单文件sqlite数据库
 # DB_ENGINE: sqlite3
 # DB_NAME: 
-
 # MySQL or postgres setting like:
 # 使用Mysql作为数据库
 DB_ENGINE: mysql
@@ -44,6 +43,7 @@ DB_NAME: jumpserver
 # 运行时绑定端口
 HTTP_BIND_HOST: 0.0.0.0
 HTTP_LISTEN_PORT: 8080
+WS_LISTEN_PORT: 8070
 
 # Use Redis as broker for celery and web socket
 # Redis配置
@@ -53,15 +53,29 @@ REDIS_PORT: 6379
 # REDIS_DB_CELERY: 3
 # REDIS_DB_CACHE: 4
 
-# Use OpenID authorization
-# 使用OpenID 来进行认证设置
-# BASE_SITE_URL: http://localhost:8080
-# AUTH_OPENID: false  # True or False
-# AUTH_OPENID_SERVER_URL: https://openid-auth-server.com/
-# AUTH_OPENID_REALM_NAME: realm-name
+# Use OpenID Authorization
+# 使用 OpenID 进行认证设置
+# AUTH_OPENID: False # True or False
+# BASE_SITE_URL: None
 # AUTH_OPENID_CLIENT_ID: client-id
 # AUTH_OPENID_CLIENT_SECRET: client-secret
-#
+# AUTH_OPENID_PROVIDER_ENDPOINT: https://op-example.com/
+# AUTH_OPENID_PROVIDER_AUTHORIZATION_ENDPOINT: https://op-example.com/authorize
+# AUTH_OPENID_PROVIDER_TOKEN_ENDPOINT: https://op-example.com/token
+# AUTH_OPENID_PROVIDER_JWKS_ENDPOINT: https://op-example.com/jwks
+# AUTH_OPENID_PROVIDER_USERINFO_ENDPOINT: https://op-example.com/userinfo
+# AUTH_OPENID_PROVIDER_END_SESSION_ENDPOINT: https://op-example.com/logout
+# AUTH_OPENID_PROVIDER_SIGNATURE_ALG: HS256
+# AUTH_OPENID_PROVIDER_SIGNATURE_KEY: None
+# AUTH_OPENID_SCOPES: "openid profile email"
+# AUTH_OPENID_ID_TOKEN_MAX_AGE: 60
+# AUTH_OPENID_ID_TOKEN_INCLUDE_CLAIMS: True
+# AUTH_OPENID_USE_STATE: True
+# AUTH_OPENID_USE_NONCE: True
+# AUTH_OPENID_SHARE_SESSION: True
+# AUTH_OPENID_IGNORE_SSL_VERIFICATION: True
+# AUTH_OPENID_ALWAYS_UPDATE_USER: True
+
 # Use Radius authorization
 # 使用Radius来认证
 # AUTH_RADIUS: false
@@ -69,8 +83,46 @@ REDIS_PORT: 6379
 # RADIUS_PORT: 1812
 # RADIUS_SECRET: 
 
+# CAS 配置
+# AUTH_CAS': False,
+# CAS_SERVER_URL': "http://host/cas/",
+# CAS_ROOT_PROXIED_AS': 'http://jumpserver-host:port',  
+# CAS_LOGOUT_COMPLETELY': True,
+# CAS_VERSION': 3,
+
+# LDAP/AD settings
+# LDAP 搜索分页数量
+# AUTH_LDAP_SEARCH_PAGED_SIZE: 1000
+#
+# 定时同步用户
+# 启用 / 禁用
+# AUTH_LDAP_SYNC_IS_PERIODIC: True
+# 同步间隔 (单位: 时) (优先）
+# AUTH_LDAP_SYNC_INTERVAL: 12
+# Crontab 表达式
+# AUTH_LDAP_SYNC_CRONTAB: * 6 * * *
+#
+# LDAP 用户登录时仅允许在用户列表中的用户执行 LDAP Server 认证
+# AUTH_LDAP_USER_LOGIN_ONLY_IN_USERS: False
+#
+# LDAP 认证时如果日志中出现以下信息将参数设置为 0 (详情参见：https://www.python-ldap.org/en/latest/faq.html)
+# In order to perform this operation a successful bind must be completed on the connection
+# AUTH_LDAP_OPTIONS_OPT_REFERRALS: -1
 
 # OTP settings
 # OTP/MFA 配置
 # OTP_VALID_WINDOW: 0
 # OTP_ISSUER_NAME: Jumpserver
+
+# Perm show single asset to ungrouped node
+# 是否把未授权节点资产放入到 未分组 节点中
+# PERM_SINGLE_ASSET_TO_UNGROUP_NODE: false
+#
+# 启用定时任务
+# PERIOD_TASK_ENABLE: True
+#
+# 启用二次复合认证配置
+# LOGIN_CONFIRM_ENABLE: False
+#
+# Windows 登录跳过手动输入密码
+# WINDOWS_SKIP_ALL_MANUAL_PASSWORD: False

@@ -22,9 +22,20 @@ urlpatterns = [
     path('session-online/', views.SessionOnlineListView.as_view(), name='session-online-list'),
     path('session-offline/', views.SessionOfflineListView.as_view(), name='session-offline-list'),
     path('session/<uuid:pk>/', views.SessionDetailView.as_view(), name='session-detail'),
+    path('session/<uuid:pk>/commands/', views.SessionCommandsView.as_view(), name='session-commands'),
+    path('session/<uuid:pk>/replay/download/', views.SessionReplayDownloadView.as_view(), name='session-replay-download'),
 
     # Command view
     path('command/', views.CommandListView.as_view(), name='command-list'),
-    path('command/export/', views.CommandExportView.as_view(), name='command-export')
+
+    # replay-storage
+    path('terminal/replay-storage/', views.ReplayStorageListView.as_view(), name='replay-storage-list'),
+    path('terminal/replay-storage/create/', views.ReplayStorageCreateView.as_view(), name='replay-storage-create'),
+    path('terminal/replay-storage/<uuid:pk>/update/', views.ReplayStorageUpdateView.as_view(), name='replay-storage-update'),
+
+    # command-storage
+    path('terminal/command-storage/', views.CommandStorageListView.as_view(), name='command-storage-list'),
+    path('terminal/command-storage/create/', views.CommandStorageCreateView.as_view(), name='command-storage-create'),
+    path('terminal/command-storage/<uuid:pk>/update/', views.CommandStorageUpdateView.as_view(), name='command-storage-update'),
 
 ]

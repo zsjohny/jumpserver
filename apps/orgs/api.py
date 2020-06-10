@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 #
 
-from rest_framework import status
+from django.shortcuts import get_object_or_404
+from rest_framework import status, generics
 from rest_framework.views import Response
 from rest_framework_bulk import BulkModelViewSet
 
 from common.permissions import IsSuperUserOrAppUser
 from .models import Organization
 from .serializers import OrgSerializer, OrgReadSerializer, \
-    OrgMembershipUserSerializer, OrgMembershipAdminSerializer
+    OrgMembershipUserSerializer, OrgMembershipAdminSerializer, \
+    OrgAllUserSerializer
 from users.models import User, UserGroup
 from assets.models import Asset, Domain, AdminUser, SystemUser, Label
 from perms.models import AssetPermission
 from orgs.utils import current_org
 from common.utils import get_logger
-from .mixins import OrgMembershipModelViewSetMixin
+from .mixins.api import OrgMembershipModelViewSetMixin
 
 logger = get_logger(__file__)
 
@@ -33,7 +35,7 @@ class OrgViewSet(BulkModelViewSet):
 
     def get_data_from_model(self, model):
         if model == User:
-            data = model.objects.filter(orgs__id=self.org.id)
+            data = model.objects.filter(related_user_orgs__id=self.org.id)
         else:
             data = model.objects.filter(org_id=self.org.id)
         return data
@@ -67,3 +69,15 @@ class OrgMembershipUsersViewSet(OrgMembershipModelViewSetMixin, BulkModelViewSet
     membership_class = Organization.users.through
     permission_classes = (IsSuperUserOrAppUser, )
 
+
+class OrgAllUserListApi(generics.ListAPIView):
+    permission_classes = (IsSuperUserOrAppUser,)
+    serializer_class = OrgAllUserSerializer
+    filter_fields = ("username", "name")
+    search_fields = filter_fields
+
+    def get_queryset(self):
+        pk = self.kwargs.get("pk")
+        org = get_object_or_404(Organization, pk=pk)
+        users = org.get_org_users().only(*self.serializer_class.Meta.only_fields)
+        return users

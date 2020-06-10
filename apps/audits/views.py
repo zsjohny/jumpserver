@@ -14,13 +14,13 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView
 from django.utils.translation import ugettext as _
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 
 from audits.utils import get_excel_response, write_content_to_excel
 from common.mixins import DatetimeSearchMixin
-from common.permissions import AdminUserRequiredMixin
-
+from common.permissions import (
+    PermissionsMixin, IsOrgAdmin, IsValidUser, IsOrgAuditor
+)
 from orgs.utils import current_org
 from ops.views import CommandExecutionListView as UserCommandExecutionListView
 from .models import FTPLog, OperateLog, PasswordChangeLog, UserLoginLog
@@ -42,12 +42,13 @@ def get_resource_type_list():
     return [model._meta.verbose_name for model in models]
 
 
-class FTPLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
+class FTPLogListView(PermissionsMixin, DatetimeSearchMixin, ListView):
     model = FTPLog
     template_name = 'audits/ftp_log_list.html'
     paginate_by = settings.DISPLAY_PER_PAGE
     user = asset = system_user = filename = ''
     date_from = date_to = None
+    permission_classes = [IsOrgAdmin | IsOrgAuditor]
 
     def get_queryset(self):
         self.queryset = super().get_queryset()
@@ -89,13 +90,14 @@ class FTPLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
         return super().get_context_data(**kwargs)
 
 
-class OperateLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
+class OperateLogListView(PermissionsMixin, DatetimeSearchMixin, ListView):
     model = OperateLog
     template_name = 'audits/operate_log_list.html'
     paginate_by = settings.DISPLAY_PER_PAGE
     user = action = resource_type = ''
     date_from = date_to = None
     actions_dict = dict(OperateLog.ACTION_CHOICES)
+    permission_classes = [IsOrgAdmin | IsOrgAuditor]
 
     def get_queryset(self):
         self.queryset = super().get_queryset()
@@ -118,13 +120,13 @@ class OperateLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = {
-            'user_list': current_org.get_org_users(),
+            'user_list': [str(user) for user in current_org.get_org_members()],
             'actions': self.actions_dict,
+            'search_action': self.action,
             'resource_type_list': get_resource_type_list(),
             'date_from': self.date_from,
             'date_to': self.date_to,
             'user': self.user,
-            'action': self.action,
             'resource_type': self.resource_type,
             "app": _("Audits"),
             "action": _("Operate log"),
@@ -133,15 +135,16 @@ class OperateLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
         return super().get_context_data(**kwargs)
 
 
-class PasswordChangeLogList(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
+class PasswordChangeLogList(PermissionsMixin, DatetimeSearchMixin, ListView):
     model = PasswordChangeLog
     template_name = 'audits/password_change_log_list.html'
     paginate_by = settings.DISPLAY_PER_PAGE
     user = ''
     date_from = date_to = None
+    permission_classes = [IsOrgAdmin | IsOrgAuditor]
 
     def get_queryset(self):
-        users = current_org.get_org_users()
+        users = current_org.get_org_members()
         self.queryset = super().get_queryset().filter(
             user__in=[user.__str__() for user in users]
         )
@@ -158,7 +161,7 @@ class PasswordChangeLogList(AdminUserRequiredMixin, DatetimeSearchMixin, ListVie
 
     def get_context_data(self, **kwargs):
         context = {
-            'user_list': current_org.get_org_users(),
+            'user_list': [str(user) for user in current_org.get_org_members()],
             'date_from': self.date_from,
             'date_to': self.date_to,
             'user': self.user,
@@ -169,23 +172,24 @@ class PasswordChangeLogList(AdminUserRequiredMixin, DatetimeSearchMixin, ListVie
         return super().get_context_data(**kwargs)
 
 
-class LoginLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
+class LoginLogListView(PermissionsMixin, DatetimeSearchMixin, ListView):
     template_name = 'audits/login_log_list.html'
     model = UserLoginLog
     paginate_by = settings.DISPLAY_PER_PAGE
     user = keyword = ""
     date_to = date_from = None
+    permission_classes = [IsOrgAdmin | IsOrgAuditor]
 
     @staticmethod
-    def get_org_users():
-        users = current_org.get_org_users().values_list('username', flat=True)
+    def get_org_members():
+        users = current_org.get_org_members().values_list('username', flat=True)
         return users
 
     def get_queryset(self):
         if current_org.is_default():
             queryset = super().get_queryset()
         else:
-            users = self.get_org_users()
+            users = self.get_org_members()
             queryset = super().get_queryset().filter(username__in=users)
 
         self.user = self.request.GET.get('user', '')
@@ -212,7 +216,7 @@ class LoginLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
             'date_to': self.date_to,
             'user': self.user,
             'keyword': self.keyword,
-            'user_list': self.get_org_users(),
+            'user_list': self.get_org_members(),
         }
         kwargs.update(context)
         return super().get_context_data(**kwargs)
@@ -220,6 +224,10 @@ class LoginLogListView(AdminUserRequiredMixin, DatetimeSearchMixin, ListView):
 
 class CommandExecutionListView(UserCommandExecutionListView):
     user_id = None
+
+    def get_user_list(self):
+        users = current_org.get_org_members(exclude=('Auditor',))
+        return users
 
     def get_queryset(self):
         queryset = self._get_queryset()
@@ -231,10 +239,6 @@ class CommandExecutionListView(UserCommandExecutionListView):
             queryset = queryset.filter(user__in=org_users)
         return queryset
 
-    def get_user_list(self):
-        users = current_org.get_org_users()
-        return users
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
@@ -242,15 +246,16 @@ class CommandExecutionListView(UserCommandExecutionListView):
             'action': _('Command execution log'),
             'date_from': self.date_from,
             'date_to': self.date_to,
-            'user_list': self.get_user_list(),
+            'user_list': [(str(user.id), user) for user in self.get_user_list()],
             'keyword': self.keyword,
             'user_id': self.user_id,
         })
-        return super().get_context_data(**context)
+        return context
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class LoginLogExportView(LoginRequiredMixin, View):
+class LoginLogExportView(PermissionsMixin, View):
+    permission_classes = [IsValidUser]
 
     def get(self, request):
         fields = [
@@ -263,19 +268,22 @@ class LoginLogExportView(LoginRequiredMixin, View):
         header = [field.verbose_name for field in fields]
         login_logs = cache.get(request.GET.get('spm', ''), [])
 
-        response = write_content_to_excel(excel_response, login_logs=login_logs,
-                                          header=header, fields=fields)
+        response = write_content_to_excel(
+            excel_response, login_logs=login_logs, header=header, fields=fields
+        )
         return response
 
     def post(self, request):
         try:
-            date_form = json.loads(request.body).get('date_form', [])
+            date_from = json.loads(request.body).get('date_from', [])
             date_to = json.loads(request.body).get('date_to', [])
             user = json.loads(request.body).get('user', [])
             keyword = json.loads(request.body).get('keyword', [])
 
             login_logs = UserLoginLog.get_login_logs(
-                date_form=date_form, date_to=date_to, user=user, keyword=keyword)
+                date_from=date_from, date_to=date_to, user=user,
+                keyword=keyword,
+            )
         except ValueError:
             return HttpResponse('Json object not valid', status=400)
         spm = uuid.uuid4().hex

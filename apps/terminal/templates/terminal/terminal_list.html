@@ -18,6 +18,7 @@
 {% block table_search %}{% endblock %}
 
 {% block table_container %}
+<div class="uc pull-left m-r-5"><a href="{% url "terminal:replay-storage-list" %}" class="btn btn-sm btn-primary"> {% trans "Storage configuration" %} </a></div>
 <table class="table table-striped table-bordered table-hover " id="terminal_list_table" >
     <thead>
         <tr>
@@ -50,6 +51,7 @@ function initTable() {
         buttons: [],
         columnDefs: [
             {targets: 1, createdCell: function (td, cellData, rowData) {
+                cellData = htmlEscape(cellData);
                 var detail_btn = '<a href="{% url "terminal:terminal-detail" pk=DEFAULT_PK %}">' + cellData + '</a>';
                 $(td).html(detail_btn.replace('{{ DEFAULT_PK }}', rowData.id));
              }},
@@ -68,16 +70,17 @@ function initTable() {
                 }
             }},
             {targets: 6, createdCell: function (td, cellData, rowData) {
+                var name = htmlEscape(rowData.name);
                 var update_btn = '<a href="{% url "terminal:terminal-update" pk=DEFAULT_PK %}" class="btn btn-xs btn-info">{% trans "Update" %}</a>'
                         .replace('{{ DEFAULT_PK }}', cellData);
                 var delete_btn = '<a class="btn btn-xs btn-danger m-l-xs btn-del" data-id="{{ DEFAULT_PK }}" data-name="99991938">{% trans "Delete" %}</a>'
                         .replace('{{ DEFAULT_PK }}', cellData)
-                        .replace('99991938', rowData.name);
+                        .replace('99991938', name);
                 var accept_btn = '<a class="btn btn-xs btn-primary btn-accept" data-id="{{ DEFAULT_PK }}">{% trans "Accept" %}</a> '
                         .replace('{{ DEFAULT_PK }}', cellData);
                 var reject_btn = '<a class="btn btn-xs btn-danger m-l-xs btn-del" data-id="{{ DEFAULT_PK }}" data-name="99991938">{% trans "Reject" %}</a>'
                         .replace('{{ DEFAULT_PK }}', cellData)
-                        .replace('99991938', rowData.name);
+                        .replace('99991938', name);
                 if (rowData.is_accepted) {
                     $(td).html(update_btn + delete_btn);
                 } else {
@@ -89,7 +92,7 @@ function initTable() {
         ],
         ajax_url: '{% url "api-terminal:terminal-list" %}',
         columns: [{data: function(){return ""}}, {data: "name" }, {data: "remote_addr" },
-                  {data: "session_online"}, {data: "is_active" }, {data: 'is_alive'}, {data: "id"}],
+                  {data: "session_online", orderable: false}, {data: "is_active", orderable: false}, {data: 'is_alive'}, {data: "id", orderable: false}],
         op_html: $('#actions').html()
     };
     jumpserver.initDataTable(options);

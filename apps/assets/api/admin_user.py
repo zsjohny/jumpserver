@@ -14,13 +14,14 @@
 # limitations under the License.
 
 from django.db import transaction
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from django.utils.translation import ugettext as _
+from rest_framework import status
 from rest_framework.response import Response
-from rest_framework_bulk import BulkModelViewSet
-from rest_framework.pagination import LimitOffsetPagination
+from orgs.mixins.api import OrgBulkModelViewSet
+from orgs.mixins import generics
 
-from common.mixins import IDInFilterMixin
 from common.utils import get_logger
 from ..hands import IsOrgAdmin
 from ..models import AdminUser, Asset
@@ -36,31 +37,38 @@ __all__ = [
 ]
 
 
-class AdminUserViewSet(IDInFilterMixin, BulkModelViewSet):
+class AdminUserViewSet(OrgBulkModelViewSet):
     """
     Admin user api set, for add,delete,update,list,retrieve resource
     """
-
+    model = AdminUser
     filter_fields = ("name", "username")
     search_fields = filter_fields
-    queryset = AdminUser.objects.all()
     serializer_class = serializers.AdminUserSerializer
     permission_classes = (IsOrgAdmin,)
-    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset().all()
+        queryset = super().get_queryset()
+        queryset = queryset.annotate(_assets_amount=Count('assets'))
         return queryset
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        has_related_asset = instance.assets.exists()
+        if has_related_asset:
+            data = {'msg': _('Deleted failed, There are related assets')}
+            return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)
 
 
 class AdminUserAuthApi(generics.UpdateAPIView):
-    queryset = AdminUser.objects.all()
+    model = AdminUser
     serializer_class = serializers.AdminUserAuthSerializer
     permission_classes = (IsOrgAdmin,)
 
 
 class ReplaceNodesAdminUserApi(generics.UpdateAPIView):
-    queryset = AdminUser.objects.all()
+    model = AdminUser
     serializer_class = serializers.ReplaceNodeAdminUserSerializer
     permission_classes = (IsOrgAdmin,)
 
@@ -85,7 +93,7 @@ class AdminUserTestConnectiveApi(generics.RetrieveAPIView):
     """
     Test asset admin user assets_connectivity
     """
-    queryset = AdminUser.objects.all()
+    model = AdminUser
     permission_classes = (IsOrgAdmin,)
     serializer_class = serializers.TaskIDSerializer
 
@@ -98,7 +106,6 @@ class AdminUserTestConnectiveApi(generics.RetrieveAPIView):
 class AdminUserAssetsListView(generics.ListAPIView):
     permission_classes = (IsOrgAdmin,)
     serializer_class = serializers.AssetSimpleSerializer
-    pagination_class = LimitOffsetPagination
     filter_fields = ("hostname", "ip")
     http_method_names = ['get']
     search_fields = filter_fields

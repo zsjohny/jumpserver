@@ -2,14 +2,12 @@
 {% load i18n static %}
 {% block table_search %}{% endblock %}
 {% block help_message %}
-    <div class="alert alert-info help-message">
     {% trans 'System user bound some command filter, each command filter has some rules,'%}
     {% trans 'When user login asset with this system user, then run a command,' %}
     {% trans 'The command will be filter by rules, higher priority rule run first,' %}
     {% trans 'When a rule matched, if rule action is allow, then allow command execute,' %}
     {% trans 'else if action is deny, then command with be deny,' %}
     {% trans 'else match next rule, if none matched, allowed' %}
-    </div>
 {% endblock %}
 {% block table_container %}
 <div class="uc pull-left  m-r-5">
@@ -40,6 +38,7 @@ function initTable() {
         ele: $('#cmd_filter_list_table'),
         columnDefs: [
             {targets: 1, createdCell: function (td, cellData, rowData) {
+                cellData = htmlEscape(cellData);
                 var detail_btn = '<a href="{% url 'assets:cmd-filter-detail' pk=DEFAULT_PK %}">' + cellData + '</a>';
                 $(td).html(detail_btn.replace('{{ DEFAULT_PK }}', rowData.id));
             }},
@@ -61,8 +60,9 @@ function initTable() {
         ],
         ajax_url: '{% url "api-assets:cmd-filter-list" %}',
         columns: [
-            {data: "id"}, {data: "name" }, {data: "rules" },
-            {data: "system_users" }, {data: "comment"}, {data: "id"}
+            {data: "id"}, {data: "name" }, {data: "rules", orderable: false},
+            {data: "system_users", orderable: false}, {data: "comment"},
+            {data: "id", orderable: false, width: "120px"}
         ],
         op_html: $('#actions').html()
     };

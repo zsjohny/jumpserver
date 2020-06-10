@@ -3,9 +3,22 @@
 import os
 import uuid
 
-from rest_framework.views import Response
-from rest_framework import generics, serializers
 from django.core.cache import cache
+from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import generics, serializers
+
+from .http import HttpResponseTemporaryRedirect
+from .const import KEY_CACHE_RESOURCES_ID
+from .utils import get_logger
+
+__all__ = [
+    'LogTailApi', 'ResourcesIDCacheApi',
+]
+
+logger = get_logger(__file__)
 
 
 class OutputSerializer(serializers.Serializer):
@@ -40,7 +53,7 @@ class LogTailApi(generics.RetrieveAPIView):
         return line
 
     def read_from_file(self):
-        with open(self.log_path, 'r') as f:
+        with open(self.log_path, 'rt', encoding='utf8') as f:
             offset = cache.get(self.mark, 0)
             f.seek(offset)
             data = f.read(self.buff_size).replace('\n', '\r\n')
@@ -68,3 +81,22 @@ class LogTailApi(generics.RetrieveAPIView):
 
         data, end, new_mark = self.read_from_file()
         return Response({"data": data, 'end': end, 'mark': new_mark})
+
+
+class ResourcesIDCacheApi(APIView):
+    def post(self, request, *args, **kwargs):
+        spm = str(uuid.uuid4())
+        resources_id = request.data.get('resources')
+        if resources_id:
+            cache_key = KEY_CACHE_RESOURCES_ID.format(spm)
+            cache.set(cache_key, resources_id, 300)
+        return Response({'spm': spm})
+
+
+@csrf_exempt
+def redirect_plural_name_api(request, *args, **kwargs):
+    resource = kwargs.get("resource", "")
+    org_full_path = request.get_full_path()
+    full_path = org_full_path.replace(resource, resource+"s", 1)
+    logger.debug("Redirect {} => {}".format(org_full_path, full_path))
+    return HttpResponseTemporaryRedirect(full_path)

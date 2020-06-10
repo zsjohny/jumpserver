@@ -4,16 +4,16 @@ import json
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from ..utils import get_signer
+from ..utils import signer
 
 
 __all__ = [
     'JsonMixin', 'JsonDictMixin', 'JsonListMixin', 'JsonTypeMixin',
     'JsonCharField', 'JsonTextField', 'JsonListCharField', 'JsonListTextField',
     'JsonDictCharField', 'JsonDictTextField', 'EncryptCharField',
-    'EncryptTextField', 'EncryptMixin',
+    'EncryptTextField', 'EncryptMixin', 'EncryptJsonDictTextField',
+    'EncryptJsonDictCharField',
 ]
-signer = get_signer()
 
 
 class JsonMixin:
@@ -108,14 +108,24 @@ class JsonTextField(JsonMixin, models.TextField):
 
 
 class EncryptMixin:
+    """
+    EncryptMixin要放在最前面
+    """
     def from_db_value(self, value, expression, connection, context):
-        if value is not None:
-            return signer.unsign(value)
-        return None
+        if value is None:
+            return value
+        value = signer.unsign(value)
+        sp = super()
+        if hasattr(sp, 'from_db_value'):
+            return sp.from_db_value(value, expression, connection, context)
+        return value
 
     def get_prep_value(self, value):
         if value is None:
             return value
+        sp = super()
+        if hasattr(sp, 'get_prep_value'):
+            value = sp.get_prep_value(value)
         return signer.sign(value)
 
 
@@ -124,9 +134,32 @@ class EncryptTextField(EncryptMixin, models.TextField):
 
 
 class EncryptCharField(EncryptMixin, models.CharField):
+    @staticmethod
+    def change_max_length(kwargs):
+        kwargs.setdefault('max_length', 1024)
+        max_length = kwargs.get('max_length')
+        if max_length < 129:
+            max_length = 128
+        max_length = max_length * 2
+        kwargs['max_length'] = max_length
+
     def __init__(self, *args, **kwargs):
-        kwargs['max_length'] = 2048
+        self.change_max_length(kwargs)
         super().__init__(*args, **kwargs)
 
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        max_length = kwargs.pop('max_length')
+        if max_length > 255:
+            max_length = max_length // 2
+        kwargs['max_length'] = max_length
+        return name, path, args, kwargs
 
+
+class EncryptJsonDictTextField(EncryptMixin, JsonDictTextField):
+    pass
+
+
+class EncryptJsonDictCharField(EncryptMixin, JsonDictCharField):
+    pass
 

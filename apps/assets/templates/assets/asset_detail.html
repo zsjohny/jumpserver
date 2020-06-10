@@ -3,9 +3,7 @@
 {% load i18n %}
 
 {% block custom_head_css_js %}
-    <link href='{% static "css/plugins/select2/select2.min.css" %}' rel="stylesheet">
     <link href='{% static "css/plugins/sweetalert/sweetalert.css" %}' rel="stylesheet">
-    <script src='{% static "js/plugins/select2/select2.full.min.js" %}'></script>
     <script src='{% static "js/plugins/sweetalert/sweetalert.min.js" %}'></script>
 {% endblock %}
 
@@ -22,7 +20,6 @@
                             <li>
                                 <a href="{% url 'assets:asset-user-list' pk=asset.id %}" class="text-center"><i class="fa fa-bar-chart-o"></i> {% trans 'Asset user list' %} </a>
                             </li>
-                            {% if user.is_superuser %}
                             <li class="pull-right">
                                 <a class="btn btn-outline btn-default" href="{% url 'assets:asset-update' pk=asset.id %}"><i class="fa fa-edit"></i>{% trans 'Update' %}</a>
                             </li>
@@ -31,7 +28,6 @@
                                     <i class="fa fa-trash-o"></i>{% trans 'Delete' %}
                                 </a>
                             </li>
-                            {% endif %}
                         </ul>
                     </div>
                     <div class="tab-content">
@@ -69,12 +65,8 @@
                                             <td><b>{{ asset.public_ip|default:"" }}</b></td>
                                         </tr>
                                         <tr>
-                                            <td>{% trans 'Port' %}:</td>
-                                            <td><b>{{ asset.port }}</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td>{% trans 'Protocol' %}:</td>
-                                            <td><b>{{ asset.protocol }}</b></td>
+                                            <td>{% trans 'Protocol' %}</td>
+                                            <td><b>{{ asset.protocols }}</b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Admin user' %}:</td>
@@ -94,7 +86,7 @@
                                         </tr>
                                         <tr>
                                             <td>{% trans 'CPU' %}:</td>
-                                            <td><b>{{ asset.cpu_model|default:"" }} {{ asset.cpu_count|default:"" }}*{{ asset.cpu_cores|default:"" }}</b></td>
+                                            <td><b>{{ asset.cpu_info }}</b></td>
                                         </tr>
                                         <tr>
                                             <td>{% trans 'Memory' %}:</td>
@@ -166,7 +158,7 @@
                                               </span>
                                           </td>
                                         </tr>
-                                        {% if asset.protocol == 'ssh' %}
+                                        {% if asset.is_support_ansible %}
                                         <tr>
                                             <td>{% trans 'Refresh hardware' %}:</td>
                                             <td>
@@ -199,10 +191,7 @@
                                         <form>
                                             <tr>
                                                 <td colspan="2" class="no-borders">
-                                                    <select data-placeholder="{% trans 'Nodes' %}" id="groups_selected" class="select2 groups" style="width: 100%" multiple="" tabindex="4">
-                                                        {% for node in nodes_remain %}
-                                                        <option value="{{ node.id }}" id="opt_{{ node.id }}" >{{ node }}</option>
-                                                        {% endfor %}
+                                                    <select data-placeholder="{% trans 'Nodes' %}" id="groups_selected" class="nodes-select2 groups" style="width: 100%" multiple="" tabindex="4">
                                                     </select>
                                                 </td>
                                             </tr>
@@ -215,7 +204,7 @@
 
                                         {% for node in asset.nodes.all %}
                                         <tr>
-                                          <td ><b class="bdg_node" data-gid={{ node.id }}>{{ node }}</b></td>
+                                          <td ><b class="bdg_node" data-gid={{ node.id }}>{{ node.full_value }}</b></td>
                                           <td>
                                               <button class="btn btn-danger pull-right btn-xs btn-leave-node" type="button"><i class="fa fa-minus"></i></button>
                                           </td>
@@ -271,7 +260,7 @@ function updateAssetNodes(nodes) {
         // clear jumpserver.groups_selected
         jumpserver.nodes_selected = {};
     };
-    APIUpdateAttr({
+    requestApi({
         url: the_url,
         body: JSON.stringify(body),
         success: success
@@ -279,23 +268,23 @@ function updateAssetNodes(nodes) {
 }
 
 function refreshAssetHardware() {
-    var the_url = "{% url 'api-assets:asset-refresh' pk=asset.id %}";
+    var the_url = "{% url 'api-assets:asset-task-create' pk=asset.id %}";
     var success = function(data) {
-        console.log(data);
         var task_id = data.task;
-        var url = '{% url "ops:celery-task-log" pk=DEFAULT_PK %}'.replace("{{ DEFAULT_PK }}", task_id);
-        window.open(url, '', 'width=800,height=600')
+        showCeleryTaskLog(task_id);
     };
-    APIUpdateAttr({
+    requestApi({
         url: the_url,
         success: success,
-        method: 'GET'
+        data: {action: "refresh"},
+        method: 'POST'
     });
 }
 
 
 $(document).ready(function () {
-    $('.select2.groups').select2().on('select2:select', function(evt) {
+    nodesSelect2Init(".nodes-select2")
+    .on('select2:select', function(evt) {
         var data = evt.params.data;
         jumpserver.nodes_selected[data.id] = data.text;
     }).on('select2:unselect', function(evt) {
@@ -310,7 +299,7 @@ $(document).ready(function () {
     };
     var success = '{% trans "Update successfully!" %}';
     var status = $(".ibox-content > table > tbody > tr:nth-child(13) > td:last >b").text();
-    APIUpdateAttr({
+    requestApi({
         url: the_url,
         body: JSON.stringify(body),
         success_message: success
@@ -356,17 +345,15 @@ $(document).ready(function () {
 }).on('click', '#btn_refresh_asset', function () {
     refreshAssetHardware()
 }).on('click', '#btn-test-is-alive', function () {
-    var the_url = "{% url 'api-assets:asset-alive-test' pk=asset.id %}";
-
+    var the_url = "{% url 'api-assets:asset-task-create' pk=asset.id %}";
     var success = function(data) {
         var task_id = data.task;
-        var url = '{% url "ops:celery-task-log" pk=DEFAULT_PK %}'.replace("{{ DEFAULT_PK }}", task_id);
-        window.open(url, '', 'width=800,height=600')
+        showCeleryTaskLog(task_id);
     };
-
-    APIUpdateAttr({
+    requestApi({
         url: the_url,
-        method: 'GET',
+        method: 'POST',
+        data: {action: "test"},
         success: success
     });
 })

@@ -20,7 +20,8 @@
 
         <h3>{% trans 'Auth' %}</h3>
         {% block password %}{% endblock %}
-        {% bootstrap_field form.otp_level layout="horizontal" %}
+        {% bootstrap_field form.mfa_level layout="horizontal" %}
+        {% bootstrap_field form.source layout="horizontal" %}
 
         <div class="hr-line-dashed"></div>
         <h3>{% trans 'Security and Role' %}</h3>
@@ -56,24 +57,32 @@
 {% endblock %}
 {% block custom_foot_js %}
     <script src="{% static 'js/plugins/datepicker/bootstrap-datepicker.js' %}"></script>
+    <script src="{% static 'js/plugins/datepicker/bootstrap-datepicker.zh-CN.min.js' %}"></script>
     <script type="text/javascript" src='{% static "js/plugins/daterangepicker/moment.min.js" %}'></script>
     <script type="text/javascript" src='{% static "js/plugins/daterangepicker/daterangepicker.min.js" %}'></script>
     <link rel="stylesheet" type="text/css" href={% static "css/plugins/daterangepicker/daterangepicker.css" %} />
 
     <script>
-        var dateOptions = {
-            singleDatePicker: true,
-            showDropdowns: true,
-            timePicker: true,
-            timePicker24Hour: true,
-            autoApply: true,
-            locale: {
-                format: 'YYYY-MM-DD HH:mm'
+        var role_id = '#' + '{{ form.role.id_for_label }}';
+        var groups_id = '#' + '{{ form.groups.id_for_label }}';
+        function fieldDisplay(){
+            var role = $(role_id).val();
+            if (role === 'Auditor'){
+                $(groups_id).closest('.form-group').addClass('hidden');
             }
-        };
+            else {
+                $(groups_id).closest('.form-group').removeClass('hidden');
+            }}
+
         $(document).ready(function () {
             $('.select2').select2();
-            $('#id_date_expired').daterangepicker(dateOptions);
+            initDateRangePicker('#id_date_expired');
+            var mfa_radio = $('#id_mfa_level');
+            mfa_radio.addClass("form-inline");
+            mfa_radio.children().css("margin-right","15px");
+            fieldDisplay()
+        }).on('change', role_id, function(){
+            fieldDisplay();
         })
     </script>
 {% endblock %}

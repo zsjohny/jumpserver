@@ -1,12 +1,10 @@
-{% extends 'base.html' %}
+{% extends '_base_asset_tree_list.html' %}
 {% load static %}
 {% load i18n %}
 
 {% block custom_head_css_js %}
     <link href="{% static "css/plugins/footable/footable.core.css" %}" rel="stylesheet">
     <link href="{% static 'css/plugins/datepicker/datepicker3.css' %}" rel="stylesheet">
-    <link href="{% static 'css/plugins/select2/select2.min.css' %}" rel="stylesheet">
-    <script src="{% static 'js/plugins/select2/select2.full.min.js' %}"></script>
     <link href="{% static 'css/plugins/jstree/style.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/plugins/ztree/awesomeStyle/awesome.css' %}" rel="stylesheet">
     <script type="text/javascript" src="{% static 'js/plugins/ztree/jquery.ztree.all.min.js' %}"></script>
@@ -14,70 +12,37 @@
         .toggle {
             cursor: pointer;
         }
-        .detail-key {
-            width: 70px;
-        }
     </style>
 {% endblock %}
 
-{% block content %}
-<div class="wrapper wrapper-content">
-   <div class="row">
-       <div class="col-lg-3" id="split-left" style="padding-left: 3px">
-           <div class="ibox float-e-margins">
-               <div class="ibox-content mailbox-content" style="padding-top: 0;padding-left: 1px">
-                   <div class="file-manager ">
-                       <div id="assetTree" class="ztree">
-                       </div>
-                       <div class="clearfix"></div>
-                   </div>
-               </div>
-           </div>
-       </div>
-       <div class="col-lg-9 animated fadeInRight" id="split-right">
-           <div class="tree-toggle">
-               <div class="btn btn-sm btn-primary tree-toggle-btn" onclick="toggle()">
-                   <i class="fa fa-angle-left fa-x" id="toggle-icon"></i>
-               </div>
-           </div>
-          <div class="mail-box-header">
-              <div class="uc pull-left m-r-5">
-                   <a class="btn btn-sm btn-primary btn-create-permission">
-                       {% trans "Create permission" %}
-                   </a>
-              </div>
-              <table class="table table-striped table-bordered table-hover" id="permission_list_table" style="width: 100%">
-                  <thead>
-                  <tr>
-                       <th></th>
-                       <th>{% trans 'Name' %}</th>
-                       <th class="text-center">{% trans 'User' %}</th>
-                       <th class="text-center">{% trans 'User group' %}</th>
-                       <th class="text-center">{% trans 'Asset' %}</th>
-                       <th class="text-center">{% trans 'Node'%}</th>
-                       <th class="text-center">{% trans 'System user' %}</th>
-                       <th class="text-center">{% trans 'Validity' %}</th>
-                       <th class="text-center" >{% trans 'Action' %}</th>
-                   </tr>
-                  </thead>
-                  <tbody>
-                  </tbody>
-              </table>
-          </div>
-       </div>
-   </div>
-</div>
-
-<ul class="dropdown-menu search-help">
-    <li><a class="search-item" data-value="name">{% trans 'Name' %}</a></li>
-    <li><a class="search-item" data-value="is_valid">{% trans 'Validity' %}</a></li>
-    <li><a class="search-item" data-value="username">{% trans 'Username' %}</a></li>
-    <li><a class="search-item" data-value="user_group">{% trans 'User group' %}</a></li>
-    <li><a class="search-item" data-value="ip">IP</a></li>
-    <li><a class="search-item" data-value="hostname">{% trans 'Hostname' %}</a></li>
-    <li><a class="search-item" data-value="node">{% trans 'Node' %}</a></li>
-    <li><a class="search-item" data-value="system_user">{% trans 'System user' %}</a></li>
-</ul>
+{% block table_container %}
+     <div class="btn-group uc pull-left m-r-5">
+        <button class="btn btn-sm btn-primary btn-create-permission">
+            {% trans "Create permission" %}
+        </button>
+        <button data-toggle="dropdown" class="btn btn-primary btn-sm dropdown-toggle"><span class="caret"></span></button>
+        <ul class="dropdown-menu">
+            <li><a class="refresh-asset-permission-cache" href="#">{% trans 'Refresh permission cache' %}</a></li>
+        </ul>
+     </div>
+     <table class="table table-striped table-bordered table-hover" id="permission_list_table" style="width: 100%">
+         <thead>
+         <tr>
+              <th></th>
+              <th>{% trans 'Name' %}</th>
+              <th class="text-center">{% trans 'User' %}</th>
+              <th class="text-center">{% trans 'User group' %}</th>
+              <th class="text-center">{% trans 'Asset' %}</th>
+              <th class="text-center">{% trans 'Node'%}</th>
+              <th class="text-center">{% trans 'System user' %}</th>
+              <th class="text-center">{% trans 'Validity' %}</th>
+              <th class="text-center" >{% trans 'Action' %}</th>
+          </tr>
+         </thead>
+         <tbody>
+         </tbody>
+     </table>
+{% include '_filter_dropdown.html' %}
 {% endblock %}
 
 {% block custom_foot_js %}
@@ -86,7 +51,7 @@
 <script>
 var zTree, table, show = 0;
 
-function onSelected(event, treeNode) {
+function onNodeSelected(event, treeNode) {
     setCookie('node_selected', treeNode.id);
     var url = table.ajax.url();
     if (treeNode.meta.type === 'node') {
@@ -102,16 +67,13 @@ function onSelected(event, treeNode) {
 }
 
 
-function beforeAsync(treeId, treeNode) {
+function beforeNodeAsync(treeId, treeNode) {
     if (treeNode) {
         return treeNode.meta.type === 'node'
     }
     return true
 }
 
-function makeLabel(data) {
-    return "<label class='detail-key'><b>" + data[0] + ": </b></label>" + data[1] + "</br>"
-}
 
 function format(d) {
     var data = "";
@@ -130,6 +92,9 @@ function format(d) {
     if (d.system_users.length > 0) {
         data += makeLabel(["{% trans 'System user' %}", d.system_users.join(", ")])
     }
+    if (d.actions.length > 0) {
+        data += makeLabel(["{% trans 'Action' %}", d.actions.join(", ")])
+    }
     return data
 }
 
@@ -143,6 +108,7 @@ function initTable() {
                 $(td).html("<i class='fa fa-angle-right'></i>");
             }},
             {targets: 1, createdCell: function (td, cellData, rowData) {
+                cellData = htmlEscape(cellData);
                 var detail_btn = '<a href="{% url "perms:asset-permission-detail" pk=DEFAULT_PK %}">' + cellData + '</a>';
                 $(td).html(detail_btn.replace('{{ DEFAULT_PK }}', rowData.id));
             }},
@@ -174,10 +140,11 @@ function initTable() {
 				}
             }},
             {targets: 8, createdCell: function (td, cellData, rowData) {
+                var name = htmlEscape(rowData.name);
                 var update_btn = '<a href="{% url "perms:asset-permission-update" pk=DEFAULT_PK %}" class="btn btn-xs m-l-xs btn-info">{% trans "Update" %}</a>'.replace('{{ DEFAULT_PK }}', cellData);
                 var del_btn = '<a class="btn btn-xs btn-danger m-l-xs btn-del" data-uid="{{ DEFAULT_PK }}" mark=1 data-name="99991938">{% trans "Delete" %}</a>'
                     .replace('{{ DEFAULT_PK }}', cellData)
-                    .replace('99991938', rowData.name);
+                    .replace('99991938', name);
                 if (rowData.inherit) {
                     del_btn = del_btn.replace("mark", "disabled")
                 }
@@ -186,10 +153,10 @@ function initTable() {
         ],
         ajax_url: '{% url "api-perms:asset-permission-list" %}',
         columns: [
-            {data: "id"}, {data: "name"}, {data: "users"},
-            {data: "user_groups"}, {data: "assets"},
-            {data: "nodes"}, {data: "system_users"},
-            {data: "is_valid", orderable: false}, {data: "id", orderable: false}
+            {data: "id"}, {data: "name"}, {data: "users", orderable: false},
+            {data: "user_groups", orderable: false}, {data: "assets", orderable: false},
+            {data: "nodes", orderable: false}, {data: "system_users", orderable: false},
+            {data: "is_valid", orderable: false}, {data: "id", orderable: false, width: "120px"}
         ],
         select: {},
         op_html: $('#actions').html()
@@ -200,49 +167,33 @@ function initTable() {
 
 
 function initTree() {
-    var setting = {
-        view: {
-            dblClickExpand: false,
-            showLine: true
-        },
-        data: {
-            simpleData: {
-                enable: true
-            }
-        },
-        async: {
-			enable: true,
-			url: "{% url 'api-assets:node-children-tree' %}?assets=1",
-			autoParam:["id=key", "name=n", "level=lv"],
-            type: 'get'
-		},
-        callback: {
-            onSelected: onSelected,
-            beforeAsync: beforeAsync
-        }
-    };
-    zTree = $.fn.zTree.init($("#assetTree"), setting);
+    initNodeTree({
+        onSelected: onNodeSelected,
+        beforeAsync: beforeNodeAsync,
+        showMenu: false,
+        showAssets: true
+    })
 }
 
-function toggle() {
-    if (show === 0) {
-        $("#split-left").hide(500, function () {
-            $("#split-right").attr("class", "col-lg-12");
-            $("#toggle-icon").attr("class", "fa fa-angle-right fa-x");
-            show = 1;
-        });
-    } else {
-        $("#split-right").attr("class", "col-lg-9");
-        $("#toggle-icon").attr("class", "fa fa-angle-left fa-x");
-        $("#split-left").show(500);
-        show = 0;
-    }
-}
 
 $(document).ready(function(){
     initTable();
     initTree();
-
+    var filterMenu = [
+        {title: "{% trans 'Name' %}", value: "name"},
+        {title: "{% trans 'Validity' %}", value: "is_valid"},
+        {title: "{% trans 'Username' %}", value: "username"},
+        {title: "{% trans 'User group' %}", value: "user_group"},
+        {title: "{% trans 'IP' %}", value: "ip"},
+        {title: "{% trans 'Hostname' %}", value: "hostname"},
+        {title: "{% trans 'Node' %}", value: "node"},
+        {title: "{% trans 'System user' %}", value: "system_user"},
+        {title: "{% trans 'Inherit' %}", value: "all", submenu: [
+            {title: "{% trans 'Include' %}", value: "1"},
+            {title: "{% trans 'Exclude' %}", value: "0"},
+        ]},
+    ];
+    initTableFilterDropdown('#permission_list_table_filter input', filterMenu, 15)
 })
 .on('click', '.btn-del', function () {
     var $this = $(this);
@@ -252,19 +203,29 @@ $(document).ready(function(){
             .replace('{{ DEFAULT_PK }}', uid);
     objectDelete($this, name, the_url);
 })
+.on('click', '.refresh-asset-permission-cache', function () {
+    var the_url = "{% url 'api-perms:refresh-asset-permission-cache' %}";
+    requestApi({
+        url: the_url,
+        method: 'GET',
+        success_message: "{% trans 'Refresh success' %}"
+    });
+})
 .on('click', '.btn-create-permission', function () {
     var url = "{% url 'perms:asset-permission-create' %}";
-    var nodes = zTree.getSelectedNodes();
-    var _nodes = [];
-    var _assets = [];
-    $.each(nodes, function (id, node) {
-        if (node.meta.type === 'node') {
-            _nodes.push(node.meta.node.id)
-        } else {
-            _assets.push(node.meta.asset.id)
-        }
-    });
-    url += "?assets=" + _assets.join(",") + "&nodes=" + _nodes.join(",");
+    if (zTree) {
+        var nodes = zTree.getSelectedNodes();
+        var _nodes = [];
+        var _assets = [];
+        $.each(nodes, function (id, node) {
+            if (node.meta.type === 'node') {
+                _nodes.push(node.meta.node.id)
+            } else {
+                _assets.push(node.meta.asset.id)
+            }
+        });
+        url += "?assets=" + _assets.join(",") + "&nodes=" + _nodes.join(",");
+    }
     window.open(url, '_self');
 }).on('click', '.toggle', function (e) {
     e.preventDefault();
@@ -290,28 +251,8 @@ $(document).ready(function(){
             detailRows.push(tr.attr('id'));
         }
     }
-
-}).on('click', '#permission_list_table_filter input', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var position = $('#permission_list_table_filter input').offset();
-    var y = position['top'];
-    var x = position['left'];
-    x -= 220;
-    y += 30;
-
-    $('.search-help').css({"top":y+"px", "left":x+"px", "position": "absolute"});
-    $('.dropdown-menu.search-help').show();
-}).on('click', '.search-item', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var value = $(this).data('value');
-    var old_value = $('#permission_list_table_filter input').val();
-    var new_value = old_value + ' ' + value + ':';
-    $('#permission_list_table_filter input').val(new_value.trim());
-    $('.dropdown-menu.search-help').hide();
-    $('#permission_list_table_filter input').focus()
-}).on('click', 'body', function (e) {
+})
+.on('click', 'body', function (e) {
     $('.dropdown-menu.search-help').hide()
 })
 

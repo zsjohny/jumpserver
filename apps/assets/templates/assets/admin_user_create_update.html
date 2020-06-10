@@ -2,10 +2,6 @@
 {% load i18n %}
 {% load static %}
 {% load bootstrap3 %}
-{% block custom_head_css_js %}
-    <link href="{% static 'css/plugins/select2/select2.min.css' %}" rel="stylesheet">
-    <script src="{% static 'js/plugins/select2/select2.full.min.js' %}"></script>
-{% endblock %}
 
 {% block content %}
     <div class="wrapper wrapper-content animated fadeInRight">
@@ -37,7 +33,7 @@
                             {% bootstrap_field form.name layout="horizontal" %}
                             {% bootstrap_field form.username layout="horizontal" %}
                             {% bootstrap_field form.password layout="horizontal" %}
-                            {% bootstrap_field form.private_key_file layout="horizontal" %}
+                            {% bootstrap_field form.private_key layout="horizontal" %}
                             {% bootstrap_field form.comment layout="horizontal" %}
 
                             <div class="form-group">
@@ -54,9 +50,37 @@
     </div>
 {% endblock %}
 {% block custom_foot_js %}
-    <script>
-        $(document).ready(function () {
-            $('.select2').select2();
-        })
-    </script>
+<script>
+$(document).ready(function () {
+    $('.select2').select2();
+})
+.on("submit", "form", function (evt) {
+    evt.preventDefault();
+    var the_url = '{% url 'api-assets:admin-user-list' %}';
+    var redirect_to = '{% url "assets:admin-user-list" %}';
+    var method = "POST";
+    {% if type == "update" %}
+        the_url = '{% url 'api-assets:admin-user-detail' pk=object.id %}';
+        redirect_to = '{% url "assets:admin-user-list" %}';
+        method = "PUT";
+    {% endif %}
+    var form = $("form");
+    var data = form.serializeObject();
+    data["private_key"] = $("#id_private_key").data('file');
+
+    var props = {
+        url: the_url,
+        data: data,
+        method: method,
+        form: form,
+        redirect_to: redirect_to
+    };
+    formSubmit(props);
+})
+.on('change', '#id_private_key', function () {
+    readFile($(this)).on("onload", function (evt, data) {
+        $(this).data("file", data)
+    })
+})
+</script>
 {% endblock %}

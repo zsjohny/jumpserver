@@ -29,27 +29,28 @@ $(document).ready(function () {
     $('.select2').select2({
         closeOnSelect: false
     })
-}).on('click', '.select2-selection__rendered', function (e) {
-    e.preventDefault();
-    $("#asset_list_modal").modal();
-    initSelectedAssets2Table();
+    initAssetTreeModel("#id_assets");
 })
-.on('click', '#btn_asset_modal_confirm', function () {
-    var assets = asset_table2.selected;
-    var options = [];
-    $('#id_assets option').each(function (i, v) {
-        options.push(v.value)
-    });
-    asset_table2.selected_rows.forEach(function (i) {
-        var name = i.hostname + '(' + i.ip + ')';
-        var option = new Option(name, i.id, false, true);
-
-        if (options.indexOf(i.id) === -1) {
-            $('#id_assets').append(option).trigger('change');
-        }
-    });
-    $('#id_assets').val(assets).trigger('change');
-    $("#asset_list_modal").modal('hide');
+.on("submit", "form", function (evt) {
+    evt.preventDefault();
+    var the_url = '{% url 'api-assets:label-list' %}';
+    var redirect_to = '{% url "assets:label-list" %}';
+    var method = "POST";
+    {% if type == "update" %}
+        the_url = '{% url 'api-assets:label-detail' pk=object.id %}';
+        method = "PUT";
+    {% endif %}
+    var form = $("form");
+    var data = form.serializeObject();
+    objectAttrsIsList(data, ['assets']);
+    var props = {
+        url: the_url,
+        data: data,
+        method: method,
+        form: form,
+        redirect_to: redirect_to
+     };
+    formSubmit(props);
 })
 </script>
 {% endblock %}

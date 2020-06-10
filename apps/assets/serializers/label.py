@@ -1,18 +1,26 @@
 # -*- coding: utf-8 -*-
 #
 from rest_framework import serializers
-from rest_framework_bulk.serializers import BulkListSerializer
+
+from common.serializers import AdaptedBulkListSerializer
+from orgs.mixins.serializers import BulkOrgResourceModelSerializer
 
 from ..models import Label
 
 
-class LabelSerializer(serializers.ModelSerializer):
+class LabelSerializer(BulkOrgResourceModelSerializer):
     asset_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Label
-        fields = '__all__'
-        list_serializer_class = BulkListSerializer
+        fields = [
+            'id', 'name', 'value', 'category', 'is_active', 'comment',
+            'date_created', 'asset_count', 'assets', 'get_category_display'
+        ]
+        read_only_fields = (
+            'category', 'date_created', 'asset_count', 'get_category_display'
+        )
+        list_serializer_class = AdaptedBulkListSerializer
 
     @staticmethod
     def get_asset_count(obj):
@@ -24,7 +32,7 @@ class LabelSerializer(serializers.ModelSerializer):
         return fields
 
 
-class LabelDistinctSerializer(serializers.ModelSerializer):
+class LabelDistinctSerializer(BulkOrgResourceModelSerializer):
     value = serializers.SerializerMethodField()
 
     class Meta:

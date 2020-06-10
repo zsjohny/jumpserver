@@ -1,101 +1,144 @@
 # -*- coding: utf-8 -*-
 #
-
-
+from django.conf import settings
 from rest_framework.response import Response
-from rest_framework import viewsets, status, generics
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework import generics, filters
+from rest_framework_bulk import BulkModelViewSet
 
-from common.permissions import IsOrgAdminOrAppUser
+from common.permissions import IsOrgAdminOrAppUser, NeedMFAVerify
 from common.utils import get_object_or_none, get_logger
-
-from ..backends.multi import AssetUserManager
-from ..models import Asset
+from common.mixins import CommonApiMixin
+from ..backends import AssetUserManager
+from ..models import Asset, Node, SystemUser
 from .. import serializers
-from ..tasks import test_asset_users_connectivity_manual
+from ..tasks import (
+    test_asset_users_connectivity_manual, push_system_user_a_asset_manual
+)
 
 
 __all__ = [
-    'AssetUserViewSet', 'AssetUserAuthInfoApi', 'AssetUserTestConnectiveApi',
+    'AssetUserViewSet', 'AssetUserAuthInfoViewSet', 'AssetUserTaskCreateAPI',
 ]
 
 
 logger = get_logger(__name__)
 
 
-class AssetUserViewSet(viewsets.GenericViewSet):
-    pagination_class = LimitOffsetPagination
-    serializer_class = serializers.AssetUserSerializer
-    permission_classes = (IsOrgAdminOrAppUser, )
-    http_method_names = ['get', 'post']
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def get_queryset(self):
-        username = self.request.GET.get('username')
-        asset_id = self.request.GET.get('asset_id')
-        asset = get_object_or_none(Asset, pk=asset_id)
-        queryset = AssetUserManager.filter(username=username, asset=asset)
-        return queryset
-
-    def filter_queryset(self, queryset):
-        queryset = sorted(
-            queryset,
-            key=lambda q: (q.asset.hostname, q.connectivity, q.username)
-        )
+class AssetUserFilterBackend(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        kwargs = {}
+        for field in view.filter_fields:
+            value = request.GET.get(field)
+            if not value:
+                continue
+            if field == "node_id":
+                value = get_object_or_none(Node, pk=value)
+                kwargs["node"] = value
+                continue
+            elif field == "asset_id":
+                field = "asset"
+            kwargs[field] = value
+        if kwargs:
+            queryset = queryset.filter(**kwargs)
+        logger.debug("Filter {}".format(kwargs))
         return queryset
 
 
-class AssetUserAuthInfoApi(generics.RetrieveAPIView):
-    serializer_class = serializers.AssetUserAuthInfoSerializer
-    permission_classes = (IsOrgAdminOrAppUser,)
+class AssetUserSearchBackend(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        value = request.GET.get('search')
+        if not value:
+            return queryset
+        queryset = queryset.search(value)
+        return queryset
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        status_code = status.HTTP_200_OK
-        if not instance:
-            status_code = status.HTTP_400_BAD_REQUEST
-        return Response(serializer.data, status=status_code)
+
+class AssetUserLatestFilterBackend(filters.BaseFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        latest = request.GET.get('latest') == '1'
+        if latest:
+            queryset = queryset.distinct()
+        return queryset
+
+
+class AssetUserViewSet(CommonApiMixin, BulkModelViewSet):
+    serializer_classes = {
+        'default': serializers.AssetUserWriteSerializer,
+        'list': serializers.AssetUserReadSerializer,
+        'retrieve': serializers.AssetUserReadSerializer,
+    }
+    permission_classes = [IsOrgAdminOrAppUser]
+    filter_fields = [
+        "id", "ip", "hostname", "username",
+        "asset_id", "node_id",
+        "prefer", "prefer_id",
+    ]
+    search_fields = ["ip", "hostname", "username"]
+    filter_backends = [
+        AssetUserFilterBackend, AssetUserSearchBackend,
+        AssetUserLatestFilterBackend,
+    ]
+
+    def allow_bulk_destroy(self, qs, filtered):
+        return False
 
     def get_object(self):
-        username = self.request.GET.get('username')
-        asset_id = self.request.GET.get('asset_id')
-        asset = get_object_or_none(Asset, pk=asset_id)
-        try:
-            instance = AssetUserManager.get(username, asset)
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            return None
-        else:
-            return instance
+        pk = self.kwargs.get("pk")
+        queryset = self.get_queryset()
+        obj = queryset.get(id=pk)
+        return obj
+
+    def get_exception_handler(self):
+        def handler(e, context):
+            return Response({"error": str(e)}, status=400)
+        return handler
+
+    def perform_destroy(self, instance):
+        manager = AssetUserManager()
+        manager.delete(instance)
+
+    def get_queryset(self):
+        manager = AssetUserManager()
+        queryset = manager.all()
+        return queryset
 
 
-class AssetUserTestConnectiveApi(generics.RetrieveAPIView):
-    """
-    Test asset users connective
-    """
+class AssetUserAuthInfoViewSet(AssetUserViewSet):
+    serializer_classes = {"default": serializers.AssetUserAuthInfoSerializer}
+    http_method_names = ['get', 'post']
+    permission_classes = [IsOrgAdminOrAppUser]
+
+    def get_permissions(self):
+        if settings.SECURITY_VIEW_AUTH_NEED_MFA:
+            self.permission_classes = [IsOrgAdminOrAppUser, NeedMFAVerify]
+        return super().get_permissions()
+
+
+class AssetUserTaskCreateAPI(generics.CreateAPIView):
+    permission_classes = (IsOrgAdminOrAppUser,)
+    serializer_class = serializers.AssetUserTaskSerializer
+    filter_backends = AssetUserViewSet.filter_backends
+    filter_fields = AssetUserViewSet.filter_fields
 
     def get_asset_users(self):
-        username = self.request.GET.get('username')
-        asset_id = self.request.GET.get('asset_id')
-        asset = get_object_or_none(Asset, pk=asset_id)
-        asset_users = AssetUserManager.filter(username=username, asset=asset)
-        return asset_users
+        manager = AssetUserManager()
+        queryset = manager.all()
+        for cls in self.filter_backends:
+            queryset = cls().filter_queryset(self.request, queryset, self)
+        return list(queryset)
 
-    def retrieve(self, request, *args, **kwargs):
+    def perform_create(self, serializer):
         asset_users = self.get_asset_users()
+        # action = serializer.validated_data["action"]
+        # only this
+        # if action == "test":
         task = test_asset_users_connectivity_manual.delay(asset_users)
-        return Response({"task": task.id})
+        data = getattr(serializer, '_data', {})
+        data["task"] = task.id
+        setattr(serializer, '_data', data)
+        return task
 
-
-
+    def get_exception_handler(self):
+        def handler(e, context):
+            return Response({"error": str(e)}, status=400)
+        return handler

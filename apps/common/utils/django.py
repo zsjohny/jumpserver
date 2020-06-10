@@ -2,6 +2,7 @@
 #
 import re
 from django.shortcuts import reverse as dj_reverse
+from django.db.models import Subquery, QuerySet
 from django.conf import settings
 from django.utils import timezone
 
@@ -36,19 +37,15 @@ def date_expired_default():
     return timezone.now() + timezone.timedelta(days=365*years)
 
 
-def get_command_storage_setting():
-    default = settings.DEFAULT_TERMINAL_COMMAND_STORAGE
-    value = settings.TERMINAL_COMMAND_STORAGE
-    if not value:
-        return default
-    value.update(default)
-    return value
-
-
-def get_replay_storage_setting():
-    default = settings.DEFAULT_TERMINAL_REPLAY_STORAGE
-    value = settings.TERMINAL_REPLAY_STORAGE
-    if not value:
-        return default
-    value.update(default)
-    return value
+def union_queryset(*args, base_queryset=None):
+    if len(args) == 1:
+        return args[0]
+    elif len(args) == 0:
+        raise ValueError("args is empty")
+    args = [q.order_by() for q in args]
+    sub_query = args[0].union(*args[1:])
+    queryset_id = list(sub_query.values_list('id', flat=True))
+    if not base_queryset:
+        base_queryset = args[0].model.objects
+    queryset = base_queryset.filter(id__in=queryset_id)
+    return queryset

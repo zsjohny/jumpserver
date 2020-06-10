@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+from django.conf import settings
 from rest_framework import serializers
 
 from common.utils import get_request_ip
@@ -54,5 +55,5 @@ class TerminalSerializer(serializers.ModelSerializer):
 
 class TerminalRegistrationSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
-    comment = serializers.CharField(max_length=128)
+    comment = serializers.CharField(max_length=128, )
     service_account = ServiceAccountSerializer(read_only=True)

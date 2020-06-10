@@ -1,36 +1,22 @@
 # ~*~ coding: utf-8 ~*~
 #
 
+from orgs.utils import set_to_root_org
 
-class AssetsFilterMixin(object):
-    """
-    对资产进行过滤(查询，排序)
-    """
+__all__ = [
+    'ChangeOrgIfNeedMixin',
+]
 
-    def filter_queryset(self, queryset):
-        queryset = self.search_assets(queryset)
-        queryset = self.sort_assets(queryset)
-        return queryset
 
-    def search_assets(self, queryset):
-        from perms.utils import is_obj_attr_has
-        value = self.request.query_params.get('search')
-        if not value:
-            return queryset
-        queryset = [asset for asset in queryset if is_obj_attr_has(asset, value)]
-        return queryset
+class ChangeOrgIfNeedMixin(object):
 
-    def sort_assets(self, queryset):
-        from perms.utils import sort_assets
-        order_by = self.request.query_params.get('order')
-        if not order_by:
-            order_by = 'hostname'
+    @staticmethod
+    def change_org_if_need(request, kwargs):
+        if request.user.is_authenticated and request.user.is_superuser \
+                or request.user.is_app \
+                or kwargs.get('pk') is None:
+            set_to_root_org()
 
-        if order_by.startswith('-'):
-            order_by = order_by.lstrip('-')
-            reverse = True
-        else:
-            reverse = False
-
-        queryset = sort_assets(queryset, order_by=order_by, reverse=reverse)
-        return queryset
+    def get(self, request, *args, **kwargs):
+        self.change_org_if_need(request, kwargs)
+        return super().get(request, *args, **kwargs)

@@ -3,7 +3,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from orgs.mixins import OrgModelForm
+from orgs.mixins.forms import OrgModelForm
 from ..models import Domain, Asset, Gateway
 from .user import PasswordAndKeyAuthForm
 
@@ -12,7 +12,7 @@ __all__ = ['DomainForm', 'GatewayForm']
 
 class DomainForm(forms.ModelForm):
     assets = forms.ModelMultipleChoiceField(
-        queryset=Asset.objects.all(), label=_('Asset'), required=False,
+        queryset=Asset.objects, label=_('Asset'), required=False,
         widget=forms.SelectMultiple(
             attrs={'class': 'select2', 'data-placeholder': _('Select assets')}
         )
@@ -23,19 +23,23 @@ class DomainForm(forms.ModelForm):
         fields = ['name', 'comment', 'assets']
 
     def __init__(self, *args, **kwargs):
-        if kwargs.get('instance', None):
-            initial = kwargs.get('initial', {})
-            initial['assets'] = kwargs['instance'].assets.all()
         super().__init__(*args, **kwargs)
+        self.set_fields_queryset()
 
-        # 前端渲染优化, 防止过多资产
+    def set_fields_queryset(self):
         assets_field = self.fields.get('assets')
+
+        # 没有data代表是渲染表单, 有data代表是提交创建/更新表单
         if not self.data:
-            instance = kwargs.get('instance')
-            if instance:
-                assets_field.queryset = instance.assets.all()
+            # 有instance 代表渲染更新表单, 否则是创建表单
+            # 前端渲染优化, 防止过多资产, 设置assets queryset为none
+            if self.instance:
+                assets_field.initial = self.instance.assets.all()
+                assets_field.queryset = self.instance.assets.all()
             else:
                 assets_field.queryset = Asset.objects.none()
+        else:
+            assets_field.queryset = Asset.objects.all()
 
     def save(self, commit=True):
         instance = super().save(commit=commit)
@@ -64,7 +68,7 @@ class GatewayForm(PasswordAndKeyAuthForm, OrgModelForm):
         model = Gateway
         fields = [
             'name', 'ip', 'port', 'username', 'protocol', 'domain', 'password',
-            'private_key_file',  'is_active', 'comment',
+            'private_key',  'is_active', 'comment',
         ]
         help_texts = {
             'protocol': _("SSH gateway support proxy SSH,RDP,VNC")

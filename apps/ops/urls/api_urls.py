@@ -11,8 +11,9 @@ app_name = "ops"
 router = DefaultRouter()
 router.register(r'tasks', api.TaskViewSet, 'task')
 router.register(r'adhoc', api.AdHocViewSet, 'adhoc')
-router.register(r'history', api.AdHocRunHistoryViewSet, 'history')
+router.register(r'adhoc-executions', api.AdHocRunHistoryViewSet, 'execution')
 router.register(r'command-executions', api.CommandExecutionViewSet, 'command-execution')
+router.register(r'celery/period-tasks', api.CeleryPeriodTaskViewSet, 'celery-period-task')
 
 urlpatterns = [
     path('tasks/<uuid:pk>/run/', api.TaskRun.as_view(), name='task-run'),
